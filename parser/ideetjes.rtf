@@ -1,0 +1,93 @@
+{\rtf1\ansi\ansicpg1252\cocoartf1265
+{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red255\green255\blue255;}
+{\*\listtable{\list\listtemplateid1\listhybrid{\listlevel\levelnfc23\levelnfcn23\leveljc0\leveljcn0\levelfollow0\levelstartat1\levelspace360\levelindent0{\*\levelmarker \{hyphen\}}{\leveltext\leveltemplateid1\'01\uc0\u8259 ;}{\levelnumbers;}\fi-360\li720\lin720 }{\listname ;}\listid1}}
+{\*\listoverridetable{\listoverride\listid1\listoverridecount0\ls1}}
+\paperw11900\paperh16840\margl1440\margr1440\vieww19680\viewh16520\viewkind0
+\pard\tx566\tx1133\tx1700\tx2267\tx2834\tx3401\tx3968\tx4535\tx5102\tx5669\tx6236\tx6803\pardirnatural
+
+\f0\fs24 \cf0 \
+\
+node js.\
+svg parsig levert een lijst op van coordinaten en formules\
+Van elke kromme of rechte de afstand meten. totale tijd berekenen aan de hand van de gekozen snelheid.\
+beziere curve toevoegen tussen een nieuwe lijn zodat een optimale speed kan aan gehouden worden\
+\
+omzetten van de paden naar hoeken en array van commando's. Houd rekening met een constante snelheid en acceleratie en declaratie van de armen\
+communicatie naar arduino.\
+\
+arduino\
+Accelstepper liberary\
+communicatie + buffer\
+\
+Buffer\
+Node js voorziet een arry met commando's:\
+\pard\tx220\tx720\tx1133\tx1700\tx2267\tx2834\tx3401\tx3968\tx4535\tx5102\tx5669\tx6236\tx6803\li720\fi-720\pardirnatural
+\ls1\ilvl0\cf0 {\listtext	\uc0\u8259 	}steps 1 \
+{\listtext	\uc0\u8259 	}steps 2\
+{\listtext	\uc0\u8259 	}speed 1\
+{\listtext	\uc0\u8259 	}speed 2\
+{\listtext	\uc0\u8259 	}Accel 1\
+{\listtext	\uc0\u8259 	}Accel 2\
+{\listtext	\uc0\u8259 	}startSpeed1\
+{\listtext	\uc0\u8259 	}startSpeed2\
+{\listtext	\uc0\u8259 	}index\
+{\listtext	\uc0\u8259 	}Licht aan\
+\pard\tx566\tx1133\tx1700\tx2267\tx2834\tx3401\tx3968\tx4535\tx5102\tx5669\tx6236\tx6803\pardirnatural
+\cf0 \
+node zend start commando\
+arduino antwoord met index 0\
+node stuur commando met index 0\
+Als Arduino leest het uit dan antwoord index+1\
+node stuurt commando met index+1 \
+Als index+1 niet meer bestaat in de node array zend stop commando.\
+\
+stepper sequensie:\
+arduino ontvangt commando set alles en triggert run.\
+arduino set volgende settings en wacht tot de run returned \
+Als run returned trigger run en set volgende settings\
+\
+\
+???? Kunnen we acceleratie formule aanpassen in Accelstepper\
+Om een cirkel te maken hebben we twee sinus versnellingen nodig \
+\
+\
+Ideetjes.\
+De installatie voor een muur plaatsen met een laser erop, gericht naar een muur die met fosforiseerde verf behandeld is. Als de installatie dan begint te draaien blijft een lijnen spel op de muur zichtbaar.\
+\
+\pard\tx566\tx1133\tx1700\tx2267\tx2834\tx3401\tx3968\tx4535\tx5102\tx5669\tx6236\tx6803\pardirnatural
+{\field{\*\fldinst{HYPERLINK "http://www.instructables.com/id/Artibot-a-portrait-painting-robot/"}}{\fldrslt \cf0 http://www.instructables.com/id/Artibot-a-portrait-painting-robot/}}\
+\pard\tx566\tx1133\tx1700\tx2267\tx2834\tx3401\tx3968\tx4535\tx5102\tx5669\tx6236\tx6803\pardirnatural
+{\field{\*\fldinst{HYPERLINK "http://www.instructables.com/id/Robotic-Arm-with-Servo-Motors/"}}{\fldrslt \cf0 http://www.instructables.com/id/Robotic-Arm-with-Servo-Motors/}}\
+{\field{\*\fldinst{HYPERLINK "http://en.wikipedia.org/wiki/B%C3%A9zier_curve"}}{\fldrslt http://en.wikipedia.org/wiki/B%C3%A9zier_curve}} cubic curves\
+\
+Ge maakt een svg tekening met een rode circle. Deze wordt als basis gebruikt om in het bereik van de light painter te tekenen.\
+Men tekent alleen in de cirkel met paths. Alles met fill wordt genegeerd. \
+Js script zet alles om naar step functies.\
+Het script houd rekening met acceleraties en declaraties. Als paden niet op elkaar volgen gaat deze een andere bezier curve toevoegen om de twee hoeken met elkaar te linken. De lamp wordt dan uitgeschakeld. Als er een hoek gemaakt worden vorige en volgende vector doorgetrokken en een nieuwe bezier uitgewerkt tussen deze twee punten. De lamp wordt uitgeschakeld.\
+\
+\pard\tx566\tx1133\tx1700\tx2267\tx2834\tx3401\tx3968\tx4535\tx5102\tx5669\tx6236\tx6803\pardirnatural
+{\field{\*\fldinst{HYPERLINK "http://pomax.github.io/bezierinfo/"}}{\fldrslt \cf0 http://pomax.github.io/bezierinfo/}} te gekke info over bezier curves interessant voor parsing tool. Zie \'a715 Tracing a curve at fixed distance intervals\
+\
+configs: \
+d = distance\
+s = speed\
+l = led on/off\
+robotType = scara, cartesiaans, 2 wire.\
+\
+stap 1: svg parsen en curves eruit halen\
+stap 2: curves toevoegen om curves aan een te binden (ook start en stop curve) \
+stap 3: distance gebruiken om curves in punten om te zetten.\
+\
+stap 4: omzetten van punten naar hoeken adhv speed\
+\
+opmerking stap 2: hoe bepalen hoe ver de vector van de rechte is als men an curve naar een rechte gaat.\
+Waar entered men een circle?\
+\
+opmerking stap 4: Naar gelang het type robot wordt hier een ander functie aangeroepen\
+\
+\
+\
+\
+\
+}
