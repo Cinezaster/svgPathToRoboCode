@@ -1,7 +1,10 @@
-if (process.argv.length < 3) {
-  console.log('Usage: node ' + process.argv[1] + ' FILENAME');
-  process.exit(1);
+if (process.argv.length < 4) {
+	if (process.argv.length < 3) {
+	  console.log('Usage: node ' + process.argv[1] + ' FILENAME');
+	  process.exit(1);
+	}
 }
+
 
 Array.prototype.toFloat=function() {
 	if (this[0] == ''){
@@ -15,9 +18,10 @@ Array.prototype.toFloat=function() {
 
 var fs = require('fs')
 	, filename = process.argv[2]
+	, conversionType = process.argv[3]
 	, XmlStream = require('xml-stream')
 	, paths = new Array()
-	, contPaths = new Array()
+	, allPaths = new Array()
 	, svgData
 	;
 
@@ -42,16 +46,20 @@ xml.on('end', function(){
 	for (var i = 0; i < paths.length; i++) {
 		for (var j = 0; j < paths[i].length; j++) {
 			var numbers = paths[i][j].substr(1).replace(/-/gi, ',-');
-			console.log(numbers);
 			var arrayOfNumbers = numbers.split(",");
-			console.log(arrayOfNumbers);
-			contPaths.push({
+			allPaths.push({
 				type: paths[i][j].slice(0, 1),
 				points : arrayOfNumbers.toFloat()
 			})
 		}
 	}
-	console.log(contPaths);
+	for (var i = 0; i < allPaths.length; i++) {
+		console.log(allPaths[i])
+		if (allPaths[i].type !== allPaths[i].type.toUpperCase()) {
+			// deze posities zijn relatief en moeten absolute gemaakt worden.
+			// ga één terug en kijk of deze al absoluut is en trek alle x y op bij de absolute waarden.
+		}
+	}
 })
 
 
