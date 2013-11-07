@@ -128,13 +128,11 @@ xml.on('end', function(){
 			
 			var numbers = paths[i][j].substr(1).replace(/-/gi, ',-');
 			var arrayOfNumbers = numbers.split(",");
-			if (paths[i][j].slice(0, 1) !== 'z'){
 				allPaths.push({
 				type: paths[i][j].slice(0, 1),
 				points : arrayOfNumbers.toFloat(),
 				paint : true
-			})
-			}
+			});
 			
 		}
 	}
@@ -145,7 +143,7 @@ xml.on('end', function(){
 		absolutePointsArray[0] = allPaths[i-1].points[allPaths[i-1].points.length-2];
 		absolutePointsArray[1] = allPaths[i-1].points[allPaths[i-1].points.length-1];
 		if (allPaths[i].type !== allPaths[i].type.toUpperCase()) {
-			if (allPaths[i].type !== "v" && allPaths[i].type !== "h") {
+			if (allPaths[i].type !== "v" && allPaths[i].type !== "h" && allPaths[i].type !== "z" && allPaths[i].type !== "l") {
 				for (var j = 0; j < allPaths[i].points.length; j++) {
 					if (j%2 == 0) {
 						absolutePointsArray[j+2] = prevAbsoluteX + allPaths[i].points[j]
@@ -155,12 +153,24 @@ xml.on('end', function(){
 				}
 			} else {
 				if (allPaths[i].type === "v") {
-					absolutePointsArray[2] = prevAbsoluteX
+					absolutePointsArray[2] = prevAbsoluteX 
 					absolutePointsArray[3] = prevAbsoluteY + allPaths[i].points[0]
 				} else if(allPaths[i].type === "h") {
-					absolutePointsArray[2] = prevAbsoluteX
-					absolutePointsArray[3] = prevAbsoluteY + allPaths[i].points[0]
-				} 
+					absolutePointsArray[2] = prevAbsoluteX + allPaths[i].points[0]
+					absolutePointsArray[3] = prevAbsoluteY 
+				} else if(allPaths[i].type === "z") {
+					for (var j = i - 1; j >= 0; j--) {
+						if (allPaths[j].type === "M") {
+							absolutePointsArray[2] = allPaths[j].points[0]
+							absolutePointsArray[3] = allPaths[j].points[1]
+							break;
+						}
+					};
+				} else if(allPaths[i].type === "l") {
+
+					absolutePointsArray[2] = prevAbsoluteX  + allPaths[i].points[0]
+					absolutePointsArray[3] = prevAbsoluteY + allPaths[i].points[1]
+				}
 			}
 			
 			// deze posities zijn relatief en moeten absolute gemaakt worden.
@@ -168,7 +178,10 @@ xml.on('end', function(){
 		} else if(allPaths[i].type == "V") {
 					absolutePointsArray[2] = prevAbsoluteX
 					absolutePointsArray[3] = allPaths[i].points[0]
-		} else if(allPaths[i].type == "S") {
+		} else if(allPaths[i].type == "H") {
+					absolutePointsArray[2] = allPaths[i].points[0]
+					absolutePointsArray[3] = prevAbsoluteY
+		}else if(allPaths[i].type == "S") {
 				for (var j = 0; j < allPaths[i].points.length; j++) {
 					if (j%2 == 0) {
 						absolutePointsArray[j+2] = allPaths[i].points[j]
@@ -182,7 +195,7 @@ xml.on('end', function(){
 			allPaths[i].type = allPaths[i].type.toUpperCase()
 			allPaths[i].points = absolutePointsArray;
 		}
-		if (allPaths[i].type === "H" || allPaths[i].type === "V") {
+		if (allPaths[i].type === "H" || allPaths[i].type === "V" || allPaths[i].type === "Z") {
 			allPaths[i].type = "L"
 		}
 	}
@@ -291,13 +304,13 @@ xml.on('end', function(){
 			}
 			return (fixedX - dirX)/(fixedY - dirY);
 		}();
+
 		if (slope !== nextSlope ) {
+			
 			var testX = allPaths[i].points[allPaths[i].points.length-2];
-			var testY = allPaths[i].points[allPaths[i].points.length-1];
-			if (slope - nextSlope > 0.01 || slope - nextSlope < -0.01 ) {
-				if (slope - nextSlope !== Infinity ) {
-					if (slope - nextSlope !== -Infinity) {
-						console.log('ellipse('+testX+', '+ testY + ', 10, 10 );');
+			var testY = allPaths[i].points[allPaths[i].points.length-1];			
+			if (slope - nextSlope > 0.2 || slope - nextSlope < -0.2 ) {
+				if (Math.abs(slope) !== Math.abs(nextSlope)) {
 						var fixedX = allPaths[i].points[allPaths[i].points.length-2];
 						var fixedY = allPaths[i].points[allPaths[i].points.length-1];
 						var dirX = allPaths[i].points[allPaths[i].points.length-4];
@@ -309,7 +322,6 @@ xml.on('end', function(){
 						var opositeX = fixedX +(fixedX - dirX);
 						var opositeY = fixedY +(fixedY - dirY);
 						var length = Math.sqrt(Math.pow((fixedX-opositeX),2)+Math.pow((fixedY-opositeY),2));
-						console.log(length)
 						if (length < 20 ) {
 							opositeX = fixedX +4*(fixedX - dirX);
 							opositeY = fixedY +4*(fixedY - dirY);
@@ -324,20 +336,14 @@ xml.on('end', function(){
 						}
 						var opositeX2 = fixedX2 +(fixedX2 - dirX2);
 						var opositeY2 = fixedY2 +(fixedY2 - dirY2);
-						var length2 = Math.sqrt(Math.pow((fixedX2-opositeX2),2)+Math.pow((fixedY2-opositeY2),2));
-						console.log(length2);
-						console.log(opositeX2);
-						console.log(opositeY2);
-							
+						var length2 = Math.sqrt(Math.pow((fixedX2-opositeX2),2)+Math.pow((fixedY2-opositeY2),2));						
 							
 						if (length2 < 20) {
 
 							opositeX2 = fixedX2 +4*(fixedX2 - dirX2);
 							opositeY2 = fixedY2 +4*(fixedY2 - dirY2);
 						}
-						console.log(opositeX2);
-						console.log(opositeY2);
-						console.log('')
+						
 
 						allPaths.insert(i+1,{
 							type: "C",
@@ -357,8 +363,6 @@ xml.on('end', function(){
 					//console.log(slope- nextSlope);
 
 					};
-
-				};
 				
 			};
 			
@@ -381,11 +385,11 @@ xml.on('end', function(){
 	//console.log(allPaths);
 
 	//make bezier processing stuff
-	var x = "noFill()\;"
+	var x = "void setup() {\r\nsize(400, 400);\r\nnoLoop();\r\n}\r\n \r\n void draw() {\r\n background(102);\r\nnoFill()\;\r\n"
 		
 	for (var i = 0 ; i < allPaths.length; i++) {
 		var color = (allPaths[i].paint)? 255 : 0 ;
-		x = x + "stroke("+ color +")\;"
+		x = x + "stroke("+ color +")\;\r\n"
 		if (allPaths[i].type === "C") {
 
 			var y = ""
@@ -393,7 +397,7 @@ xml.on('end', function(){
 				y = y + allPaths[i].points[j] + ', '
 			};
 
-			x = x + "bezier (" + y.slice(0,-2) + ")\;";
+			x = x + "bezier (" + y.slice(0,-2) + ")\;\r\n";
 
 		} else if (allPaths[i].type === "L") {
 
@@ -402,11 +406,12 @@ xml.on('end', function(){
 				y = y + allPaths[i].points[j] + ', '
 			};
 
-			x = x + "line (" + y.slice(0,-2) + ")\;";
+			x = x + "line (" + y.slice(0,-2) + ")\;\r\n";
 
 		}
 		
 	};
+	x = x +"}"
 	console.log(x);
 
 })
