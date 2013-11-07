@@ -10,7 +10,7 @@ if (process.argv.length < 4) {
 }
 
 
-
+// https://gist.github.com/BonsaiDen/670236
 function Bezier(a, b, c, d) {
     this.a = a;
     this.b = b;
