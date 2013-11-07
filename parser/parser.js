@@ -181,7 +181,10 @@ xml.on('end', function(){
 		} else if(allPaths[i].type == "H") {
 					absolutePointsArray[2] = allPaths[i].points[0]
 					absolutePointsArray[3] = prevAbsoluteY
-		}else if(allPaths[i].type == "S") {
+		} else if(allPaths[i].type == "L") {
+					absolutePointsArray[2] = allPaths[i].points[0]
+					absolutePointsArray[3] = allPaths[i].points[1]
+		} else if(allPaths[i].type == "S") {
 				for (var j = 0; j < allPaths[i].points.length; j++) {
 					if (j%2 == 0) {
 						absolutePointsArray[j+2] = allPaths[i].points[j]
@@ -229,7 +232,19 @@ xml.on('end', function(){
 			}
 			var nextLineX = nextX - nextX2;
 			var nextLineY = nextY - nextY2;
-			var points = [prevX, prevY, prevX - prevLineX, prevY - prevLineY, nextX + nextLineX, nextY + nextLineY, nextX, nextY]
+			var prevDirX = prevX - prevLineX;
+			var prevDirY = prevY - prevLineY;
+
+			var points = [
+				prevX, 
+				prevY, 
+				prevDirX , 
+				prevDirY, 
+				nextX + nextLineX, 
+				nextY + nextLineY, 
+				nextX, 
+				nextY
+			]
 			allPaths[i].type = "C"
 			allPaths[i].points = points
 			allPaths[i].paint = false
