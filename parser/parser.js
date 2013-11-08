@@ -298,7 +298,6 @@ xml.on('end', function(){
 
 	// check alle curves en controleer of ze inline liggen zoniet een curve bijmaken die de overgang vloeiend maakt
 	for (var i = 1; i < allPaths.length-1; i++) {
-
 		var slope = function () {
 			var fixedX = allPaths[i].points[allPaths[i].points.length-2];
 			var fixedY = allPaths[i].points[allPaths[i].points.length-1];
@@ -441,64 +440,87 @@ xml.on('end', function(){
 
 	//Get all the points based on distance, this is nessesary for keeping a constant speed
 
-	var resolution = 2; //
-	var currentPath = 1;
-	var pointCloud = new Array();
-	//console.log(allPaths);
-	for (var cL = 0; cL < totalLength/resolution; cL++) {
-		for (var i = 0; i < allPaths.length; i++) {
-			if (cL*2 >= allPaths[i].startLength && cL*2 < allPaths[i].endLength) {
-				currentPath = i;
-				break;
+	// calculates all points on a given distance "resolution" of a an array of curves and lines
+	function pointsOnCurve(resolution, pathArray){
+		var totalLength = pathArray[pathArray.length-1].endLength;
+		var currentPath = 1;
+		this.pointCloud = new Array();
+		for (var cL = 0; cL < totalLength/resolution; cL++) {
+			for (var i = 0; i < pathArray.length; i++) {
+				if (cL*resolution >= pathArray[i].startLength && cL*resolution < pathArray[i].endLength) {
+					currentPath = i;
+					break;
+				};
 			};
+			var lP = pathArray[currentPath]
+			var xP;
+			var yP;
+			if (lP.type === "L") {
+				relPosOnLine = cL*resolution - lP.startLength;
+				relPosOnLineInPerc = relPosOnLine / lP.length
+				xP = lP.points[0] + ((lP.points[2]-lP.points[0])*relPosOnLineInPerc);
+				yP = lP.points[1] + ((lP.points[3]-lP.points[1])*relPosOnLineInPerc);
+			} else if (lP.type === "C") {
+				relPosOnLine = cL*resolution - lP.startLength;
+				relPosOnLineInPerc = relPosOnLine / lP.bezier.length
+				xP = lP.bezier.mx(relPosOnLineInPerc);
+				yP = lP.bezier.my(relPosOnLineInPerc);
+			};
+			this.pointCloud.push({
+				dist: cL*2,
+				x : xP,
+				y : yP,
+				paint : lP.paint
+			})  	
 		};
-		var lP = allPaths[currentPath]
-		var xP;
-		var yP;
-		if (lP.type === "L") {
-			//console.log(lP.length);
-			// een feestje met een rechte lijn.
-			relPosOnLine = cL*resolution - lP.startLength;
-			//console.log(lP.length +' - '+relPosOnLine + ' = '+ relPosOnLine / lP.length);
-			relPosOnLineInPerc = relPosOnLine / lP.length
-			//console.log(relPosOnLineInPerc);
-			xP = lP.points[0] + ((lP.points[2]-lP.points[0])*relPosOnLineInPerc);
-			yP = lP.points[1] + ((lP.points[3]-lP.points[1])*relPosOnLineInPerc);
-			//console.log(xP +', '+ yP);
+	};
+	var xyPoints = new pointsOnCurve(20,allPaths);
+	//console.log(xyPoints);
 
-		} else if (lP.type === "C") {
-			// een dikke rave met een kromme.
-			relPosOnLine = cL*resolution - lP.startLength;
-			//console.log(lP.length +' - '+relPosOnLine + ' = '+ relPosOnLine / lP.length);
-			relPosOnLineInPerc = relPosOnLine / lP.bezier.length
-			// door arcLengths uit lopen en de distance vergelijken. Als we twee waardes vinden waartussen distance valt percentueel de t berekenen en nieuwe x y waardes plotten met die t.
-			xP = lP.bezier.mx(relPosOnLineInPerc);
-			yP = lP.bezier.my(relPosOnLineInPerc);
-			//console.log(lP.bezier.mx(relPosOnLineInPerc) + ', '+ lP.bezier.my(relPosOnLineInPerc));
-		};
-		//console.log(cL*2 +' - '+ currentPath); 
-		pointCloud.push({
-			dist: cL*2,
-			x : xP,
-			y : yP,
-			paint : lP.paint
-		})  	
-	}; 
-	//console.log(pointCloud);
 
 	//make bezier processing stuff
 	var x = "void setup() {\r\nsize(400, 400);\r\nnoLoop();\r\n}\r\n \r\n void draw() {\r\n background(102);\r\nnoFill()\;\r\n"
 	var color = 255;
-	for (var i = 0 ; i < pointCloud.length; i++) {
-		var newColor = (pointCloud[i].paint)? 255 : 0 ;	
+	for (var i = 0 ; i < xyPoints.pointCloud.length; i++) {
+		var newColor = (xyPoints.pointCloud[i].paint)? 255 : 0 ;	
 		if (newColor !== color) {
 			x = x + "stroke("+ color +")\;\r\n"
 			color = newColor;
 		}
-		x = x + "ellipse("+ pointCloud[i].x + ', '+ pointCloud[i].y + ', 1, 1)\;\r\n';
+		x = x + "ellipse("+ xyPoints.pointCloud[i].x + ', '+ xyPoints.pointCloud[i].y + ', 1, 1)\;\r\n';
 		
 	};
 	x = x +"}"
-	console.log(x);
+	//console.log(x);
+
+	function cartesianToScara(xyPosition){
+		var xy = xyPosition.pointCloud
+		for (var i = 1; i < xy.length; i++) {
+			var stepsPerDegree = 0.8 / 8 // steppers of 0.8 deg per step in 1/8 micro stepping mode		
+			var cartX = xy[i].x - svgData.width.slice(0,-2)/2; // put 0 in the middle
+			var cartY =xy[i].y - svgData.width.slice(0,-2)/2; // put 0 in the middle
+			var armLenght = svgData.width.slice(0,-2)/4; // lenght of arms = equal width of the square image divided by 4
+			var distB = Math.sqrt(Math.pow(cartX,2)+ Math.pow(cartY,2));
+			var theta = (Math.atan2(cartY, cartX) * 180 / Math.PI);
+			var phi = (Math.acos((Math.pow(distB,2)) / (2 * distB * armLenght))) * 180 / Math.PI ;
+			var tophalf = (2*Math.pow(armLenght,2)) - Math.pow(distB,2);
+			var bottomhalf = 2 * armLenght * armLenght;
+			
+			xy[i].stepperPosition = {
+				step0 : (((Math.acos(tophalf / bottomhalf))* 180 / Math.PI) * stepsPerDegree),
+				step1 : ((theta + phi) * stepsPerDegree),
+				paint : xy[i].paint
+ 			}
+		};
+		return xy			
+	}
+
+	var xyPoints = new cartesianToScara(xyPoints);
+	console.log(xyPoints);
 
 })
+
+
+
+
+
