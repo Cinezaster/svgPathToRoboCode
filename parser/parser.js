@@ -235,6 +235,8 @@ xml.on('end', function(){
 			var prevDirX = prevX - prevLineX;
 			var prevDirY = prevY - prevLineY;
 
+			// TODO check minimum lenght on both directions, specially if previous or next was a L
+
 			var points = [
 				prevX, 
 				prevY, 
@@ -324,7 +326,7 @@ xml.on('end', function(){
 			
 			var testX = allPaths[i].points[allPaths[i].points.length-2];
 			var testY = allPaths[i].points[allPaths[i].points.length-1];			
-			if (slope - nextSlope > 0.2 || slope - nextSlope < -0.2 ) {
+			if (slope - nextSlope > 0.8 || slope - nextSlope < -0.8 ) { // 0.8 is a good falue 
 				if (Math.abs(slope) !== Math.abs(nextSlope)) {
 						var fixedX = allPaths[i].points[allPaths[i].points.length-2];
 						var fixedY = allPaths[i].points[allPaths[i].points.length-1];
@@ -359,6 +361,7 @@ xml.on('end', function(){
 							opositeY2 = fixedY2 +4*(fixedY2 - dirY2);
 						}
 						
+						//TODO check if the oposite value fall out of the drawing box
 
 						allPaths.insert(i+1,{
 							type: "C",
@@ -388,12 +391,19 @@ xml.on('end', function(){
 
 
 	//add lenght 
+	var totalLength = 0
 	for (var i = 0 ; i < allPaths.length; i++) {
 		var p = allPaths[i].points
 		if (allPaths[i].type === "C") {
-			allPaths[i].bezier = new Bezier({x:p[0],y:p[1]},{x:p[2],y:p[3]},{x:p[4],y:p[5]},{x:p[6],y:p[7]})
+			allPaths[i].bezier = new Bezier({x:p[0],y:p[1]},{x:p[2],y:p[3]},{x:p[4],y:p[5]},{x:p[6],y:p[7]});
+			allPaths[i].startLength = totalLength;
+			totalLength = totalLength + allPaths[i].bezier.length;
+			allPaths[i].endLength = totalLength;
 		} else if (allPaths[i].type === "L") {
-			allPaths[i].length = Math.sqrt(Math.pow((p[0]-p[2]),2)+Math.pow((p[1]-p[3]),2))
+			allPaths[i].length = Math.sqrt(Math.pow((p[0]-p[2]),2)+Math.pow((p[1]-p[3]),2));
+			allPaths[i].startLength = totalLength;
+			totalLength = totalLength +  allPaths[i].length;
+			allPaths[i].endLength = totalLength;
 		}
 
 	}
@@ -424,6 +434,68 @@ xml.on('end', function(){
 			x = x + "line (" + y.slice(0,-2) + ")\;\r\n";
 
 		}
+		
+	};
+	x = x +"}"
+	//console.log(x);
+
+	//Get all the points based on distance, this is nessesary for keeping a constant speed
+
+	var resolution = 2; //
+	var currentPath = 1;
+	var pointCloud = new Array();
+	//console.log(allPaths);
+	for (var cL = 0; cL < totalLength/resolution; cL++) {
+		for (var i = 0; i < allPaths.length; i++) {
+			if (cL*2 >= allPaths[i].startLength && cL*2 < allPaths[i].endLength) {
+				currentPath = i;
+				break;
+			};
+		};
+		var lP = allPaths[currentPath]
+		var xP;
+		var yP;
+		if (lP.type === "L") {
+			//console.log(lP.length);
+			// een feestje met een rechte lijn.
+			relPosOnLine = cL*resolution - lP.startLength;
+			//console.log(lP.length +' - '+relPosOnLine + ' = '+ relPosOnLine / lP.length);
+			relPosOnLineInPerc = relPosOnLine / lP.length
+			//console.log(relPosOnLineInPerc);
+			xP = lP.points[0] + ((lP.points[2]-lP.points[0])*relPosOnLineInPerc);
+			yP = lP.points[1] + ((lP.points[3]-lP.points[1])*relPosOnLineInPerc);
+			//console.log(xP +', '+ yP);
+
+		} else if (lP.type === "C") {
+			// een dikke rave met een kromme.
+			relPosOnLine = cL*resolution - lP.startLength;
+			//console.log(lP.length +' - '+relPosOnLine + ' = '+ relPosOnLine / lP.length);
+			relPosOnLineInPerc = relPosOnLine / lP.bezier.length
+			// door arcLengths uit lopen en de distance vergelijken. Als we twee waardes vinden waartussen distance valt percentueel de t berekenen en nieuwe x y waardes plotten met die t.
+			xP = lP.bezier.mx(relPosOnLineInPerc);
+			yP = lP.bezier.my(relPosOnLineInPerc);
+			//console.log(lP.bezier.mx(relPosOnLineInPerc) + ', '+ lP.bezier.my(relPosOnLineInPerc));
+		};
+		//console.log(cL*2 +' - '+ currentPath); 
+		pointCloud.push({
+			dist: cL*2,
+			x : xP,
+			y : yP,
+			paint : lP.paint
+		})  	
+	}; 
+	//console.log(pointCloud);
+
+	//make bezier processing stuff
+	var x = "void setup() {\r\nsize(400, 400);\r\nnoLoop();\r\n}\r\n \r\n void draw() {\r\n background(102);\r\nnoFill()\;\r\n"
+	var color = 255;
+	for (var i = 0 ; i < pointCloud.length; i++) {
+		var newColor = (pointCloud[i].paint)? 255 : 0 ;	
+		if (newColor !== color) {
+			x = x + "stroke("+ color +")\;\r\n"
+			color = newColor;
+		}
+		x = x + "ellipse("+ pointCloud[i].x + ', '+ pointCloud[i].y + ', 1, 1)\;\r\n';
 		
 	};
 	x = x +"}"
