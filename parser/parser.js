@@ -409,11 +409,11 @@ xml.on('end', function(){
 	//console.log(allPaths);
 
 	//make bezier processing stuff
-	var x = "void setup() {\r\nsize(400, 400);\r\nnoLoop();\r\n}\r\n \r\n void draw() {\r\n background(102);\r\nnoFill()\;\r\n"
+	var processing = "void setup() {\r\nsize(400, 400);\r\nnoLoop();\r\n}\r\n \r\n void draw() {\r\n background(102);\r\nnoFill()\;\r\n"
 		
 	for (var i = 0 ; i < allPaths.length; i++) {
 		var color = (allPaths[i].paint)? 255 : 0 ;
-		x = x + "stroke("+ color +")\;\r\n"
+		processing = processing + "stroke("+ color +")\;\r\n"
 		if (allPaths[i].type === "C") {
 
 			var y = ""
@@ -421,7 +421,7 @@ xml.on('end', function(){
 				y = y + allPaths[i].points[j] + ', '
 			};
 
-			x = x + "bezier (" + y.slice(0,-2) + ")\;\r\n";
+			processing = processing + "bezier (" + y.slice(0,-2) + ")\;\r\n";
 
 		} else if (allPaths[i].type === "L") {
 
@@ -430,13 +430,10 @@ xml.on('end', function(){
 				y = y + allPaths[i].points[j] + ', '
 			};
 
-			x = x + "line (" + y.slice(0,-2) + ")\;\r\n";
+			processing = processing + "line (" + y.slice(0,-2) + ")\;\r\n";
 
 		}
-		
 	};
-	x = x +"}"
-	//console.log(x);
 
 	//Get all the points based on distance, this is nessesary for keeping a constant speed
 
@@ -474,49 +471,95 @@ xml.on('end', function(){
 			})  	
 		};
 	};
-	var xyPoints = new pointsOnCurve(20,allPaths);
+	var xyPoints = new pointsOnCurve(2,allPaths);
 	//console.log(xyPoints);
 
 
 	//make bezier processing stuff
-	var x = "void setup() {\r\nsize(400, 400);\r\nnoLoop();\r\n}\r\n \r\n void draw() {\r\n background(102);\r\nnoFill()\;\r\n"
 	var color = 255;
 	for (var i = 0 ; i < xyPoints.pointCloud.length; i++) {
 		var newColor = (xyPoints.pointCloud[i].paint)? 255 : 0 ;	
 		if (newColor !== color) {
-			x = x + "stroke("+ color +")\;\r\n"
+			processing = processing + "stroke("+ color +")\;\r\n"
 			color = newColor;
 		}
-		x = x + "ellipse("+ xyPoints.pointCloud[i].x + ', '+ xyPoints.pointCloud[i].y + ', 1, 1)\;\r\n';
+		processing = processing + "ellipse("+ xyPoints.pointCloud[i].x + ', '+ xyPoints.pointCloud[i].y + ', 1, 1)\;\r\n';
 		
 	};
-	x = x +"}"
-	//console.log(x);
+	
 
-	function cartesianToScara(xyPosition){
+	// eigen versie cartesianToScara
+	//zoek de afstand tussen middenpunt 200 200 en x y
+	// deel afstand door twee
+	// je weet dan een rechthoekszijde en de schuine zijde (lenghte arm) of maw we moeten de hoogte van de gelijkbenige driehoek bekomen en de positie van de top
+	// als men de top van de gelijkbenige driehoek weet kan men de hoek alfa tussen punt 200 200 en x y top gelijkbenige driehoek berekenen.
+	// als men alfa weet doet men deze maal 2 en trekt men deze af van 180 en men weet de hoek van de top gelijkbenige driehoek.
+	// in ons geval trekken we deze altijd af van de hoek die alfa maakt door ons mechanische anomalie. 
+
+	function ownCartesianToScara(xyPosition){
 		var xy = xyPosition.pointCloud
+		var error = false;
 		for (var i = 1; i < xy.length; i++) {
-			var stepsPerDegree = 0.8 / 8 // steppers of 0.8 deg per step in 1/8 micro stepping mode		
-			var cartX = xy[i].x - svgData.width.slice(0,-2)/2; // put 0 in the middle
-			var cartY =xy[i].y - svgData.width.slice(0,-2)/2; // put 0 in the middle
-			var armLenght = svgData.width.slice(0,-2)/4; // lenght of arms = equal width of the square image divided by 4
+			var cartX = xy[i].x - 200;
+			var cartY = xy[i].y - 200;
+			var armLenght = 100;
+				// distance between point and swivel point
 			var distB = Math.sqrt(Math.pow(cartX,2)+ Math.pow(cartY,2));
-			var theta = (Math.atan2(cartY, cartX) * 180 / Math.PI);
-			var phi = (Math.acos((Math.pow(distB,2)) / (2 * distB * armLenght))) * 180 / Math.PI ;
-			var tophalf = (2*Math.pow(armLenght,2)) - Math.pow(distB,2);
-			var bottomhalf = 2 * armLenght * armLenght;
-			
-			xy[i].stepperPosition = {
-				step0 : (((Math.acos(tophalf / bottomhalf))* 180 / Math.PI) * stepsPerDegree),
-				step1 : ((theta + phi) * stepsPerDegree),
-				paint : xy[i].paint
- 			}
-		};
-		return xy			
+				// height of the Isosceles Triangl
+			var isosHeight = Math.sqrt(Math.pow(armLenght,2)-(Math.pow((distB/2),2)))
+				// bottom corner of Base to x as
+			var hoekBase = Math.asin(cartY/distB)* 180 /Math.PI ;
+			var hoekTop= 2 * Math.acos(isosHeight/100) * 180 /Math.PI;
+			var hoekBaseCorner = (180-hoekTop)/2;
+		   	xy[i].step0 = (cartX > 0)? hoekBase - hoekBaseCorner+360 : (180 - hoekBase) - hoekBaseCorner 
+		   	
+		   	console.log(xy[i].step0);
+			xy[i].step1 = xy[i].step0 +180 - hoekTop
+
+
+			if (isNaN(xy[i].step0)|| isNaN(xy[i].step1)) {
+				console.log("ERROR: DRAWING is out of reach of the robot arm");
+				error = true;
+				break;
+			}
+		}
+		return (error)? []:xy
 	}
 
-	var xyPoints = new cartesianToScara(xyPoints);
-	console.log(xyPoints);
+	var xyPoints = new ownCartesianToScara(xyPoints);
+	//console.log(xyPoints);
+
+
+
+	// make processing plot of all lines by angle
+	processing = processing + "colorMode(HSB, "+xyPoints.length+")\;\r\n"
+	for (var i = 1 ; i < xyPoints.length; i++) {
+		processing = processing + "stroke("+i+","+xyPoints.length+", 100)\;\r\n"
+		var	secondXPoint = 200 + Math.cos(xyPoints[i].step0*Math.PI/180)* 100 ;
+		var secondYPoint = 200 + Math.sin(xyPoints[i].step0*Math.PI/180)* 100 ;
+		processing = processing + "line( 200, 200, "+secondXPoint+", "+secondYPoint+")\;\r\n";
+		var	thirdXPoint = secondXPoint + Math.cos(xyPoints[i].step1*Math.PI/180)* 100;
+		var thirdYPoint = secondYPoint + Math.sin(xyPoints[i].step1*Math.PI/180)* 100;
+		processing = processing + "line( " +secondXPoint+", "+secondYPoint+", "+thirdXPoint+", "+thirdYPoint+")\;\r\n";
+
+	};
+	processing = processing +"}";
+	fs.writeFile(__dirname+"/processing/processing.pde", processing, function(err) {
+    if(err) {
+        console.log(err);
+    } else {
+        console.log("The file was saved!");
+    }
+    var spawn = require('child_process').spawn,
+    ls    = spawn('processing-java', [
+    	'--sketch='+ __dirname+'/processing', 
+    	'--output='+ __dirname+'/tmp',
+    	'--force',
+    	'--run'
+    	]);
+	}); 
+
+
 
 })
 
