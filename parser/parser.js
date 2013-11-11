@@ -9,79 +9,6 @@ if (process.argv.length < 4) {
 	}
 }
 
-
-// https://gist.github.com/BonsaiDen/670236
-function Bezier(a, b, c, d) {
-    this.a = a;
-    this.b = b;
-    this.c = c;
-    this.d = d;
-    
-    this.len = 100;
-    this.arcLengths = new Array(this.len + 1);
-    this.arcLengths[0] = 0;
-    
-    var ox = this.x(0), oy = this.y(0), clen = 0;
-    for(var i = 1; i <= this.len; i += 1) {
-        var x = this.x(i * 0.01), y = this.y(i * 0.01);
-        var dx = ox - x, dy = oy - y;        
-        clen += Math.sqrt(dx * dx + dy * dy);
-        this.arcLengths[i] = clen;
-        ox = x, oy = y;
-    }
-    this.length = clen;    
-}
- 
-Bezier.prototype = {
-    map: function(u) {
-        var targetLength = u * this.arcLengths[this.len];
-        var low = 0, high = this.len, index = 0;
-        while (low < high) {
-            index = low + (((high - low) / 2) | 0);
-            if (this.arcLengths[index] < targetLength) {
-                low = index + 1;
-            
-            } else {
-                high = index;
-            }
-        }
-        if (this.arcLengths[index] > targetLength) {
-            index--;
-        }
-        
-        var lengthBefore = this.arcLengths[index];
-        if (lengthBefore === targetLength) {
-            return index / this.len;
-        
-        } else {
-            return (index + (targetLength - lengthBefore) / (this.arcLengths[index + 1] - lengthBefore)) / this.len;
-        }
-    },
-    
-    mx: function (u) {
-        return this.x(this.map(u));
-    },
-    
-    my: function (u) {
-        return this.y(this.map(u));
-    },
-    
-    x: function (t) {
-        return ((1 - t) * (1 - t) * (1 - t)) * this.a.x
-               + 3 * ((1 - t) * (1 - t)) * t * this.b.x
-               + 3 * (1 - t) * (t * t) * this.c.x
-               + (t * t * t) * this.d.x;
-    },
-    
-    y: function (t) {
-        return ((1 - t) * (1 - t) * (1 - t)) * this.a.y
-               + 3 * ((1 - t) * (1 - t)) * t * this.b.y
-               + 3 * (1 - t) * (t * t) * this.c.y
-               + (t * t * t) * this.d.y;
-    }
-};
-
-
 Array.prototype.toFloat = function() {
 	if (this[0] == ''){
 		this.splice(0, 1);
@@ -96,46 +23,58 @@ Array.prototype.insert = function(index, item) {
 	  this.splice(index, 0, item);
 }
 
-var fs = require('fs')
-	, filename = process.argv[2]
-	, conversionType = process.argv[3]
-	, XmlStream = require('xml-stream')
-	, paths = new Array()
-	, allPaths = new Array()
-	, svgData
-	;
+var fs = require('fs'),
+	Bezier = require('./bezier.js'),
+	PointsOnCurve = require('./pointsOnCurve.js'),
+	CartesianToScara = require('./cartesianToScara.js'),
+	filename = process.argv[2], 
+	conversionType = process.argv[3],
+	output = process.argv[4], 
+	XmlStream = require('xml-stream'), 
+	stream = fs.createReadStream(filename,{encoding: "utf8"}), 
+	xml =new XmlStream(stream), 
+	paths = new Array(), 
+	allPaths = new Array(), 
+	svgData,
+	totalLength = 0,
+	processing = "void setup() {\r\nsize(400, 400);\r\nnoLoop();\r\n}\r\n \r\n void draw() {\r\n background(102);\r\nnoFill()\;\r\n"
 
-var stream = fs.createReadStream(filename,{encoding: "utf8"});
-var xml = new XmlStream(stream);
+
 xml.collect('path');
 xml.on('endElement: path', function(item) {
 	var pathData = item.$.d
 	var pathSegmentPattern = /[a-z][^a-z]*/ig;
-	var pathSegments = pathData.match(pathSegmentPattern); //splitten voor elke letter
-  	paths.push(pathSegments);
-  	
+	// split on every letter
+	var pathSegments = pathData.match(pathSegmentPattern);
+	// add to an array with all the paths (l,L,h,H,v,V,s,S,c,C,M)
+  	paths.push(pathSegments); 	
 });
+
 xml.on('endElement: svg', function(item) {
-	svgData = item.$
-		
+	//svgData  stores all svg data.
+	svgData = item.$	
 });
 xml.on('end', function(){
-	// alles in een lijst dumpen
+	// start processing the data
+
+	// add a start point in the middle of the svg
 	paths.unshift(['O'+svgData.width.slice(0,-2)/2+','+svgData.height.slice(0, -2)/2]);
 	
+	// fill allPaths array with an object of all the paths
 	for (var i = 0; i < paths.length; i++) {
 		for (var j = 0; j < paths[i].length; j++) {
 			
 			var numbers = paths[i][j].substr(1).replace(/-/gi, ',-');
 			var arrayOfNumbers = numbers.split(",");
-				allPaths.push({
+			allPaths.push({
 				type: paths[i][j].slice(0, 1),
 				points : arrayOfNumbers.toFloat(),
 				paint : true
 			});
-			
 		}
-	}
+	};
+
+	// change all the relative positioned paths to absolute paths
 	for (var i = 1; i < allPaths.length; i++) {
 		var absolutePointsArray = new Array();
 		var prevAbsoluteX = allPaths[i-1].points[allPaths[i-1].points.length-2];
@@ -201,9 +140,9 @@ xml.on('end', function(){
 		if (allPaths[i].type === "H" || allPaths[i].type === "V" || allPaths[i].type === "Z") {
 			allPaths[i].type = "L"
 		}
-	}
-	// alle "M" (moveTo's) vervangen door curves door de vorige en volgende points te spiegelen
-	// alle "S" (shorthand smoot curve to's) vervangen door cubic beziers
+	};
+	
+	// change all "M" and "S" to Curves
 	for (var i = 0; i < allPaths.length; i++) {
 		if (allPaths[i].type === "M") {
 			var prevX = allPaths[i-1].points[allPaths[i-1].points.length-2];
@@ -294,9 +233,8 @@ xml.on('end', function(){
 			allPaths[i].points = points
 		} 
 	};
-	//console.log(allPaths);
 
-	// check alle curves en controleer of ze inline liggen zoniet een curve bijmaken die de overgang vloeiend maakt
+	// check if all the curves are in one fluid line if not add a new curve in between to smooth out this curve
 	for (var i = 1; i < allPaths.length-1; i++) {
 		var slope = function () {
 			var fixedX = allPaths[i].points[allPaths[i].points.length-2];
@@ -386,11 +324,8 @@ xml.on('end', function(){
 			
 		}
 	};
-	//console.log(allPaths);
 
-
-	//add lenght 
-	var totalLength = 0
+	//add lenght to all C's and L's + calculate total lenght of the curve
 	for (var i = 0 ; i < allPaths.length; i++) {
 		var p = allPaths[i].points
 		if (allPaths[i].type === "C") {
@@ -404,163 +339,87 @@ xml.on('end', function(){
 			totalLength = totalLength +  allPaths[i].length;
 			allPaths[i].endLength = totalLength;
 		}
-
-	}
-	//console.log(allPaths);
-
-	//make bezier processing stuff
-	var processing = "void setup() {\r\nsize(400, 400);\r\nnoLoop();\r\n}\r\n \r\n void draw() {\r\n background(102);\r\nnoFill()\;\r\n"
-		
-	for (var i = 0 ; i < allPaths.length; i++) {
-		var color = (allPaths[i].paint)? 255 : 0 ;
-		processing = processing + "stroke("+ color +")\;\r\n"
-		if (allPaths[i].type === "C") {
-
-			var y = ""
-			for (var j =  0; j < allPaths[i].points.length; j++) {
-				y = y + allPaths[i].points[j] + ', '
-			};
-
-			processing = processing + "bezier (" + y.slice(0,-2) + ")\;\r\n";
-
-		} else if (allPaths[i].type === "L") {
-
-			var y = ""
-			for (var j =  0; j < allPaths[i].points.length; j++) {
-				y = y + allPaths[i].points[j] + ', '
-			};
-
-			processing = processing + "line (" + y.slice(0,-2) + ")\;\r\n";
-
-		}
 	};
 
-	//Get all the points based on distance, this is nessesary for keeping a constant speed
+	// PROCESSING OUTPUT show bezier curves
+	if (output === "processing" ) {
+		for (var i = 0 ; i < allPaths.length; i++) {
+			var color = (allPaths[i].paint)? 255 : 0 ;
+			processing = processing + "stroke("+ color +")\;\r\n"
+			if (allPaths[i].type === "C") {
 
-	// calculates all points on a given distance "resolution" of a an array of curves and lines
-	function pointsOnCurve(resolution, pathArray){
-		var totalLength = pathArray[pathArray.length-1].endLength;
-		var currentPath = 1;
-		this.pointCloud = new Array();
-		for (var cL = 0; cL < totalLength/resolution; cL++) {
-			for (var i = 0; i < pathArray.length; i++) {
-				if (cL*resolution >= pathArray[i].startLength && cL*resolution < pathArray[i].endLength) {
-					currentPath = i;
-					break;
+				var y = ""
+				for (var j =  0; j < allPaths[i].points.length; j++) {
+					y = y + allPaths[i].points[j] + ', '
 				};
-			};
-			var lP = pathArray[currentPath]
-			var xP;
-			var yP;
-			if (lP.type === "L") {
-				relPosOnLine = cL*resolution - lP.startLength;
-				relPosOnLineInPerc = relPosOnLine / lP.length
-				xP = lP.points[0] + ((lP.points[2]-lP.points[0])*relPosOnLineInPerc);
-				yP = lP.points[1] + ((lP.points[3]-lP.points[1])*relPosOnLineInPerc);
-			} else if (lP.type === "C") {
-				relPosOnLine = cL*resolution - lP.startLength;
-				relPosOnLineInPerc = relPosOnLine / lP.bezier.length
-				xP = lP.bezier.mx(relPosOnLineInPerc);
-				yP = lP.bezier.my(relPosOnLineInPerc);
-			};
-			this.pointCloud.push({
-				dist: cL*2,
-				x : xP,
-				y : yP,
-				paint : lP.paint
-			})  	
+
+				processing = processing + "bezier (" + y.slice(0,-2) + ")\;\r\n";
+
+			} else if (allPaths[i].type === "L") {
+
+				var y = ""
+				for (var j =  0; j < allPaths[i].points.length; j++) {
+					y = y + allPaths[i].points[j] + ', '
+				};
+
+				processing = processing + "line (" + y.slice(0,-2) + ")\;\r\n";
+
+			}
+		};
+	}
+	
+	// PointsOnCurve returns object of x y paint on a give distance on the curve
+	var points = new PointsOnCurve(10,allPaths);
+
+	// PROCESSING OUTPUT show bezier curves
+	if (output === "processing" ) {
+		var color = 255;
+		for (var i = 0 ; i < points.length; i++) {
+			var newColor = (points[i].paint)? 255 : 0 ;	
+			if (newColor !== color) {
+				processing = processing + "stroke("+ color +")\;\r\n"
+				color = newColor;
+			}
+			processing = processing + "ellipse("+ points[i].x + ', '+ points[i].y + ', 1, 1)\;\r\n';
+			
+		};
+	}
+
+	var xyPoints = new CartesianToScara(points);
+
+	// PROCESSING OUTPUT show two arms based on there angle
+	if (output === "processing") {
+		processing = processing + "colorMode(HSB, "+xyPoints.length+")\;\r\n"
+		for (var i = 1 ; i < xyPoints.length; i++) {
+			processing = processing + "stroke("+i+","+xyPoints.length+", 100)\;\r\n"
+			var	secondXPoint = 200 + Math.cos(xyPoints[i].step0*Math.PI/180)* 100 ;
+			var secondYPoint = 200 + Math.sin(xyPoints[i].step0*Math.PI/180)* 100 ;
+			processing = processing + "line( 200, 200, "+secondXPoint+", "+secondYPoint+")\;\r\n";
+			var	thirdXPoint = secondXPoint + Math.cos(xyPoints[i].step1*Math.PI/180)* 100;
+			var thirdYPoint = secondYPoint + Math.sin(xyPoints[i].step1*Math.PI/180)* 100;
+			processing = processing + "line( " +secondXPoint+", "+secondYPoint+", "+thirdXPoint+", "+thirdYPoint+")\;\r\n";
+
 		};
 	};
-	var xyPoints = new pointsOnCurve(2,allPaths);
-	//console.log(xyPoints);
-
-
-	//make bezier processing stuff
-	var color = 255;
-	for (var i = 0 ; i < xyPoints.pointCloud.length; i++) {
-		var newColor = (xyPoints.pointCloud[i].paint)? 255 : 0 ;	
-		if (newColor !== color) {
-			processing = processing + "stroke("+ color +")\;\r\n"
-			color = newColor;
-		}
-		processing = processing + "ellipse("+ xyPoints.pointCloud[i].x + ', '+ xyPoints.pointCloud[i].y + ', 1, 1)\;\r\n';
-		
-	};
 	
-
-	// eigen versie cartesianToScara
-	//zoek de afstand tussen middenpunt 200 200 en x y
-	// deel afstand door twee
-	// je weet dan een rechthoekszijde en de schuine zijde (lenghte arm) of maw we moeten de hoogte van de gelijkbenige driehoek bekomen en de positie van de top
-	// als men de top van de gelijkbenige driehoek weet kan men de hoek alfa tussen punt 200 200 en x y top gelijkbenige driehoek berekenen.
-	// als men alfa weet doet men deze maal 2 en trekt men deze af van 180 en men weet de hoek van de top gelijkbenige driehoek.
-	// in ons geval trekken we deze altijd af van de hoek die alfa maakt door ons mechanische anomalie. 
-
-	function ownCartesianToScara(xyPosition){
-		var xy = xyPosition.pointCloud
-		var error = false;
-		for (var i = 1; i < xy.length; i++) {
-			var cartX = xy[i].x - 200;
-			var cartY = xy[i].y - 200;
-			var armLenght = 100;
-				// distance between point and swivel point
-			var distB = Math.sqrt(Math.pow(cartX,2)+ Math.pow(cartY,2));
-				// height of the Isosceles Triangl
-			var isosHeight = Math.sqrt(Math.pow(armLenght,2)-(Math.pow((distB/2),2)))
-				// bottom corner of Base to x as
-			var hoekBase = Math.asin(cartY/distB)* 180 /Math.PI ;
-			var hoekTop= 2 * Math.acos(isosHeight/100) * 180 /Math.PI;
-			var hoekBaseCorner = (180-hoekTop)/2;
-		   	xy[i].step0 = (cartX > 0)? hoekBase - hoekBaseCorner+360 : (180 - hoekBase) - hoekBaseCorner 
-		   	
-		   	console.log(xy[i].step0);
-			xy[i].step1 = xy[i].step0 +180 - hoekTop
-
-
-			if (isNaN(xy[i].step0)|| isNaN(xy[i].step1)) {
-				console.log("ERROR: DRAWING is out of reach of the robot arm");
-				error = true;
-				break;
-			}
-		}
-		return (error)? []:xy
-	}
-
-	var xyPoints = new ownCartesianToScara(xyPoints);
-	//console.log(xyPoints);
-
-
-
-	// make processing plot of all lines by angle
-	processing = processing + "colorMode(HSB, "+xyPoints.length+")\;\r\n"
-	for (var i = 1 ; i < xyPoints.length; i++) {
-		processing = processing + "stroke("+i+","+xyPoints.length+", 100)\;\r\n"
-		var	secondXPoint = 200 + Math.cos(xyPoints[i].step0*Math.PI/180)* 100 ;
-		var secondYPoint = 200 + Math.sin(xyPoints[i].step0*Math.PI/180)* 100 ;
-		processing = processing + "line( 200, 200, "+secondXPoint+", "+secondYPoint+")\;\r\n";
-		var	thirdXPoint = secondXPoint + Math.cos(xyPoints[i].step1*Math.PI/180)* 100;
-		var thirdYPoint = secondYPoint + Math.sin(xyPoints[i].step1*Math.PI/180)* 100;
-		processing = processing + "line( " +secondXPoint+", "+secondYPoint+", "+thirdXPoint+", "+thirdYPoint+")\;\r\n";
-
+	// PROCESSING OUTPUT finish the processing data and write to processing file and execupte that file.
+	if (output === "processing") {
+		processing = processing +"}";
+		fs.writeFile(__dirname+"/processing/processing.pde", processing, function(err) {
+	    if(err) {
+	        console.log(err);
+	    } else {
+	        console.log("The file was saved!");
+	    }
+	    var spawn = require('child_process').spawn,
+	    ls    = spawn('processing-java', [
+	    	'--sketch='+ __dirname+'/processing', 
+	    	'--output='+ __dirname+'/tmp',
+	    	'--force',
+	    	'--run'
+	    	]);
+		}); 
 	};
-	processing = processing +"}";
-	fs.writeFile(__dirname+"/processing/processing.pde", processing, function(err) {
-    if(err) {
-        console.log(err);
-    } else {
-        console.log("The file was saved!");
-    }
-    var spawn = require('child_process').spawn,
-    ls    = spawn('processing-java', [
-    	'--sketch='+ __dirname+'/processing', 
-    	'--output='+ __dirname+'/tmp',
-    	'--force',
-    	'--run'
-    	]);
-	}); 
-
-
-
 })
 
 
