@@ -37,6 +37,7 @@ var fs = require('fs'),
 	allPaths = new Array(), 
 	svgData,
 	totalLength = 0,
+	resolution = 10
 	processing = "void setup() {\r\nsize(400, 400);\r\nnoLoop();\r\n}\r\n \r\n void draw() {\r\n background(102);\r\nnoFill()\;\r\n"
 
 
@@ -369,7 +370,7 @@ xml.on('end', function(){
 	}
 	
 	// PointsOnCurve returns object of x y paint on a give distance on the curve
-	var points = new PointsOnCurve(10,allPaths);
+	var points = new PointsOnCurve(resolution,allPaths);
 
 	// PROCESSING OUTPUT show bezier curves
 	if (output === "processing" ) {
@@ -385,23 +386,24 @@ xml.on('end', function(){
 		};
 	}
 
-	var xyPoints = new CartesianToScara(points);
+	if (conversionType === "scara") {
+		var xyPoints = new CartesianToScara(points);
+		// PROCESSING OUTPUT show two arms based on there angle
+		if (output === "processing") {
+			processing = processing + "colorMode(HSB, "+xyPoints.length+")\;\r\n"
+			for (var i = 1 ; i < xyPoints.length; i++) {
+				processing = processing + "stroke("+i+","+xyPoints.length+", 100)\;\r\n"
+				var	secondXPoint = 200 + Math.cos(xyPoints[i].step0*Math.PI/180)* 100 ;
+				var secondYPoint = 200 + Math.sin(xyPoints[i].step0*Math.PI/180)* 100 ;
+				processing = processing + "line( 200, 200, "+secondXPoint+", "+secondYPoint+")\;\r\n";
+				var	thirdXPoint = secondXPoint + Math.cos(xyPoints[i].step1*Math.PI/180)* 100;
+				var thirdYPoint = secondYPoint + Math.sin(xyPoints[i].step1*Math.PI/180)* 100;
+				processing = processing + "line( " +secondXPoint+", "+secondYPoint+", "+thirdXPoint+", "+thirdYPoint+")\;\r\n";
 
-	// PROCESSING OUTPUT show two arms based on there angle
-	if (output === "processing") {
-		processing = processing + "colorMode(HSB, "+xyPoints.length+")\;\r\n"
-		for (var i = 1 ; i < xyPoints.length; i++) {
-			processing = processing + "stroke("+i+","+xyPoints.length+", 100)\;\r\n"
-			var	secondXPoint = 200 + Math.cos(xyPoints[i].step0*Math.PI/180)* 100 ;
-			var secondYPoint = 200 + Math.sin(xyPoints[i].step0*Math.PI/180)* 100 ;
-			processing = processing + "line( 200, 200, "+secondXPoint+", "+secondYPoint+")\;\r\n";
-			var	thirdXPoint = secondXPoint + Math.cos(xyPoints[i].step1*Math.PI/180)* 100;
-			var thirdYPoint = secondYPoint + Math.sin(xyPoints[i].step1*Math.PI/180)* 100;
-			processing = processing + "line( " +secondXPoint+", "+secondYPoint+", "+thirdXPoint+", "+thirdYPoint+")\;\r\n";
-
+			};
 		};
 	};
-	
+
 	// PROCESSING OUTPUT finish the processing data and write to processing file and execupte that file.
 	if (output === "processing") {
 		processing = processing +"}";
@@ -420,6 +422,7 @@ xml.on('end', function(){
 	    	]);
 		}); 
 	};
+	
 })
 
 

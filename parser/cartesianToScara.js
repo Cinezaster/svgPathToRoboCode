@@ -13,9 +13,10 @@ module.exports = function (xyPosition){
 			var hoekBase = Math.asin(cartY/distB)* 180 /Math.PI ;
 			var hoekTop= 2 * Math.acos(isosHeight/100) * 180 /Math.PI;
 			var hoekBaseCorner = (180-hoekTop)/2;
-		   	xy[i].step0 = (cartX > 0)? hoekBase - hoekBaseCorner+360 : (180 - hoekBase) - hoekBaseCorner 
-		   	xy[i].step0 = (xy[i].step0 > 360)? xy[i].step0-360 : xy[i].step0
-			xy[i].step1 = xy[i].step0 +180 - hoekTop
+			// check in wich quadrant the point
+		   	xy[i].step0 = (cartX > 0)? hoekBase - hoekBaseCorner+360 : (180 - hoekBase) - hoekBaseCorner;
+		   	xy[i].step0 = (xy[i].step0 > 360)? xy[i].step0-360 : xy[i].step0;
+			xy[i].step1 = xy[i].step0 +180 - hoekTop;
 
 
 			if (isNaN(xy[i].step0)|| isNaN(xy[i].step1)) {
