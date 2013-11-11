@@ -264,7 +264,7 @@ xml.on('end', function(){
 			
 			var testX = allPaths[i].points[allPaths[i].points.length-2];
 			var testY = allPaths[i].points[allPaths[i].points.length-1];			
-			if (slope - nextSlope > 0.8 || slope - nextSlope < -0.8 ) { // 0.8 is a good falue 
+			if (slope - nextSlope > 2 || slope - nextSlope < -2 ) { // 18 is a good value
 				if (Math.abs(slope) !== Math.abs(nextSlope)) {
 						var fixedX = allPaths[i].points[allPaths[i].points.length-2];
 						var fixedY = allPaths[i].points[allPaths[i].points.length-1];
@@ -367,7 +367,7 @@ xml.on('end', function(){
 
 			}
 		};
-	}
+	};
 	
 	// PointsOnCurve returns object of x y paint on a give distance on the curve
 	var points = new PointsOnCurve(resolution,allPaths);
@@ -384,7 +384,7 @@ xml.on('end', function(){
 			processing = processing + "ellipse("+ points[i].x + ', '+ points[i].y + ', 1, 1)\;\r\n';
 			
 		};
-	}
+	};
 
 	if (conversionType === "scara") {
 		var xyPoints = new CartesianToScara(points);
@@ -409,7 +409,7 @@ xml.on('end', function(){
 		processing = processing +"}";
 		fs.writeFile(__dirname+"/processing/processing.pde", processing, function(err) {
 	    if(err) {
-	        console.log(err);
+	        console.log(err);qqqqqsdqsd
 	    } else {
 	        console.log("The file was saved!");
 	    }

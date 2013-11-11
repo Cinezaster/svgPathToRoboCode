@@ -4,11 +4,13 @@
 <svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
 	 width="400px" height="400px" viewBox="0 0 400 400" enable-background="new 0 0 400 400" xml:space="preserve">
 <circle fill="#FFFFFF" stroke="#000000" stroke-miterlimit="10" cx="200" cy="200" r="200"/>
-<path fill="#FFFFFF" stroke="#000000" stroke-miterlimit="10" d="M117.929,154.803l66.61,120.859c0,0,79.657,0.687,70.044-30.902
+<path fill="none" stroke="#000000" stroke-miterlimit="10" d="M117.929,154.803l66.61,120.859c0,0,79.657,0.687,70.044-30.902
 	c-9.614-31.588-48.069-65.237-48.069-65.237l-25.408-11.674l36.814-17.854l33.23,42.576c0,0,18.541,2.06,18.541-8.927
 	c0-10.987,10.301-42.575,10.301-42.575c21.974-10.301,3.434-59.743-2.747-78.971c-8.915-27.737-122.233-25.408-131.847,41.202"/>
-<path fill="#FFFFFF" stroke="#000000" stroke-miterlimit="10" d="M57.499,226.907c0,0,2.747,54.936,28.155,34.335
-	s27.468-26.095,14.421-43.262S57.499,226.907,57.499,226.907z"/>
-<path fill="#FFFFFF" stroke="#000000" stroke-miterlimit="10" d="M73.294,148.623c12.361-22.661,73.477-28.155,88.585-28.155
+<path fill="none" stroke="#000000" stroke-miterlimit="10" d="M85.654,261.242c25.408-20.601,20.505-22.576,14.421-43.262"/>
+<path fill="none" stroke="#000000" stroke-miterlimit="10" d="M73.294,148.623c12.361-22.661,73.477-28.155,88.585-28.155
 	s138.027,45.322,131.847,61.803"/>
+<g>
+	<path fill="none" stroke="#000000" d="M162.726,282.458h-24.912v44.352h-8.64v-44.352h-24.912v-7.776h58.464V282.458z"/>
+</g>
 </svg>

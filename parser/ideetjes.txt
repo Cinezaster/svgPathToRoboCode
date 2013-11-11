@@ -79,3 +79,4 @@ opmerking stap 4: Naar gelang het type robot wordt hier een ander functie aanger
 
 
 
+
