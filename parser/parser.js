@@ -37,8 +37,11 @@ var fs = require('fs'),
 	allPaths = new Array(), 
 	svgData,
 	totalLength = 0,
-	resolution = 10
-	processing = "void setup() {\r\nsize(400, 400);\r\nnoLoop();\r\n}\r\n \r\n void draw() {\r\n background(102);\r\nnoFill()\;\r\n"
+	resolution = 5,
+	processing = "void setup() {\r\nsize(400, 400);\r\nnoLoop();\r\n}\r\n \r\n void draw() {\r\n background(102);\r\nnoFill()\;\r\n",
+	arduino = "#include <AccelStepper.h>\r\n"+
+		"AccelStepper stepper1(AccelStepper::DRIVER, 8, 9);\r\n"+
+		"AccelStepper stepper2(AccelStepper::DRIVER, 10, 11);\r\n";
 
 
 xml.collect('path');
@@ -386,6 +389,8 @@ xml.on('end', function(){
 		};
 	};
 
+	
+	points.shift();
 	if (conversionType === "scara") {
 		var xyPoints = new CartesianToScara(points);
 		// PROCESSING OUTPUT show two arms based on there angle
@@ -402,16 +407,97 @@ xml.on('end', function(){
 
 			};
 		};
+		// set angles to start position of the robot boom1 down boom 2 up istead of both straight to the right
+		var arduinoAngles = new Array();
+		for (var i = 0; i < xyPoints.length; i++) {
+			var angleObject = [
+				xyPoints[i].step0 - 90,
+				xyPoints[i].step1 - 270,
+				(xyPoints[i].paint)? 1:0
+			];
+			arduinoAngles.push(angleObject);
+		};
+
+		// takes the shortest route to next positon
+		var compensatie = [0,0]
+		for (var i = 1; i < arduinoAngles.length; i++) {
+			for (var j = 0; j < 2; j++) {
+				arduinoAngles[i][j] = arduinoAngles[i][j] + compensatie[j];
+				if ( Math.abs(arduinoAngles[i][j]- arduinoAngles[i-1][j]) > 180) {
+					if (Math.abs(arduinoAngles[i][j] + 360 - arduinoAngles[i-1][j]) < 180) {
+						compensatie[j] = compensatie[j] + 360;
+					} else if (Math.abs(arduinoAngles[i][j] - 360 - arduinoAngles[i-1][j]) < 180){
+						compensatie[j] = compensatie[j] - 360;
+					}
+					arduinoAngles[i][j] = arduinoAngles[i][j] + compensatie[j];
+				}
+			};
+		};
+		// change from degrees to steps
+		var stepsPerDegree = 1/(1.8/8)
+		var arduinoSteps = new Array();
+		for (var i = 0; i < arduinoAngles.length; i++) {
+			var stepsObject = [[
+					arduinoAngles[i][0]*stepsPerDegree,
+					arduinoAngles[i][1]*stepsPerDegree
+				],
+				arduinoAngles[i][2]
+			]
+			arduinoSteps.push(stepsObject);
+		};
+		console.log(arduinoSteps);
 	};
+
+	arduino = arduino + "int anglePosition = 0;\r\n"+
+						"int led = 13;\r\n"+
+						"float positions[][3][2]= {\r\n";
+
+	for (var i = 0; i < arduinoSteps.length; i++) {
+		arduino = arduino + "{{"+Math.round(arduinoSteps[i][0][0])+","+Math.round(arduinoSteps[i][0][1])+"},{"+arduinoSteps[i][1]+",0}},\r\n"
+	};
+
+	arduino = arduino + "};\r\n"+
+						"void setup(){\r\n"+
+ 						"	pinMode(led, OUTPUT);\r\n"+
+ 						"	stepper1.setMaxSpeed(1000);\r\n" +
+ 						"	stepper1.moveTo(positions[anglePosition][0][0]);\r\n"+
+						" 	stepper1.setSpeed(200);\r\n"+
+						"	stepper2.setMaxSpeed(1000);\r\n" +
+						" 	stepper2.moveTo(positions[anglePosition][0][1]);\r\n"+
+						" 	stepper2.setSpeed(200);\r\n"+
+						"}\r\n"+
+						"void loop(){\r\n"+
+  						"	stepper1.runSpeed();\r\n"+
+						"  	stepper2.runSpeed();\r\n"+
+						"  	if(stepper1.distanceToGo() == 0 && stepper2.distanceToGo() == 0){\r\n"+
+						"    	anglePosition++;\r\n"+
+						"    	stepper1.moveTo(positions[anglePosition][0][0]);\r\n"+
+						"    	stepper2.moveTo(positions[anglePosition][0][1]);\r\n"+
+						"    	stepper1.setSpeed((positions[anglePosition][0][0] - positions[anglePosition-1][0][0])*10);\r\n"+
+						"    	stepper2.setSpeed((positions[anglePosition][0][1] - positions[anglePosition-1][0][1])*10);\r\n"+
+						"    	if(positions[anglePosition][1][0] == 1){\r\n"+
+						"       		digitalWrite(led, HIGH);\r\n"+
+						"    	} else {\r\n"+
+						"       		digitalWrite(led, LOW);\r\n"+
+						"     	}\r\n"+
+						"   }\r\n"+
+						"}\r\n";
+	fs.writeFile("/Users/Nelissen/Documents/Arduino/LightPaintSwing/LightPaintSwing.ino", arduino, function(err) {
+	    if(err) {
+	        console.log(err);
+	    } else {
+	        console.log("The arduino file was saved!");
+	    }
+	});
 
 	// PROCESSING OUTPUT finish the processing data and write to processing file and execupte that file.
 	if (output === "processing") {
 		processing = processing +"}";
 		fs.writeFile(__dirname+"/processing/processing.pde", processing, function(err) {
 	    if(err) {
-	        console.log(err);qqqqqsdqsd
+	        console.log(err);
 	    } else {
-	        console.log("The file was saved!");
+	        console.log("The processing file was saved!");
 	    }
 	    var spawn = require('child_process').spawn,
 	    ls    = spawn('processing-java', [

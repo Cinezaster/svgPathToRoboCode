@@ -1,7 +1,7 @@
 module.exports = function (xyPosition){
 		var xy = xyPosition
 		var error = false;
-		for (var i = 1; i < xy.length; i++) {
+		for (var i = 0; i < xy.length; i++) {
 			var cartX = xy[i].x - 200;
 			var cartY = xy[i].y - 200;
 			var armLenght = 100;
@@ -17,6 +17,7 @@ module.exports = function (xyPosition){
 		   	xy[i].step0 = (cartX > 0)? hoekBase - hoekBaseCorner+360 : (180 - hoekBase) - hoekBaseCorner;
 		   	xy[i].step0 = (xy[i].step0 > 360)? xy[i].step0-360 : xy[i].step0;
 			xy[i].step1 = xy[i].step0 +180 - hoekTop;
+			xy[i].step1 = (xy[i].step1 > 360)? xy[i].step1-360 : xy[i].step1;
 
 
 			if (isNaN(xy[i].step0)|| isNaN(xy[i].step1)) {
