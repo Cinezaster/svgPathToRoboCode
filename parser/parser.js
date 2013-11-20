@@ -453,7 +453,7 @@ xml.on('end', function(){
 						"float positions[][3][2]= {\r\n";
 
 	for (var i = 0; i < arduinoSteps.length; i++) {
-		arduino = arduino + "{{"+Math.round(arduinoSteps[i][0][0])+","+Math.round(arduinoSteps[i][0][1])+"},{"+arduinoSteps[i][1]+",0}},\r\n"
+		arduino = arduino + "{{"+Math.round(arduinoSteps[i][0][0])+","+Math.round(-arduinoSteps[i][0][1])+"},{"+arduinoSteps[i][1]+",0}},\r\n"
 	};
 
 	arduino = arduino + "};\r\n"+
