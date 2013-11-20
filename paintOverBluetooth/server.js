@@ -20,6 +20,7 @@ io.sockets.on('connection', function (socket) {
 
     // Do something when a file is saved:
     uploader.on("saved", function(event){
+    	socket.emit('saved_image', event);
         console.log(event.file);
         var spawn = require('child_process').spawn,
 	    ls    = spawn('node', [

@@ -4,18 +4,25 @@
 		<title>svg to robot control panel</title>
 		<script src="/siofu/client.js"></script>
 		<script src="/socket.io/socket.io.js"></script>
+		<script src="/bower_components/jquery/jquery.js"></script>
+		<style type="text/css">
+			#file_drop {
+				background-color: #FF0000;
+			}
+		</style>
 	</head>
 	<body>
 		<h1>SVG to Robot control panel</h1>
 		<hr>
-		<p>Upload your svg file and show when it is done uploading</p>
+		
+<div id="file_drop" dropzone="copy" title="drop files for upload">Drop File
+	<p><label>Choose File: <input type="file" id="upload_input"/></label></p>
+</div>
+<div id="image"></div>
+
 		<p>Click to convert svg file to robo code and show result in canvas</p>
 		<p>Connect with robot over bluetooth</p>
 		<p>if connected to bluetooth send to robot.</p>
-
-		<p><button id="upload_btn">Prompt for File</button></p>
-<p><label>Choose File: <input type="file" id="upload_input"/></label></p>
-<div id="file_drop" dropzone="copy" title="drop files for upload">Drop File</div>
 
 		<script type="text/javascript">	
   			var socket = io.connect('http://localhost');
@@ -27,18 +34,21 @@
 			// Initialize instances:
 			var siofu = new SocketIOFileUpload(socket);
 
-			console.log(siofu);
-
 			// Configure the three ways that SocketIOFileUpload can read files:
-			document.getElementById("upload_btn").addEventListener("click", siofu.prompt, false);
 			siofu.listenOnInput(document.getElementById("upload_input"));
 			siofu.listenOnDrop(document.getElementById("file_drop"));
 
 			// Do something when a file is uploaded:
 			siofu.addEventListener("complete", function(event){
-				console.log(event.success);
-				console.log(event.file);
+				if(event.success) {
+					console.log(event.file.name);
+				} else {
+					console.log("error");
+				}
 			});
+
+			socket.on('saved_image', function(data){				$('#image').html('<image src="/upload/'+data.file.base+'.svg">')
+			})
 		</script>
 	</body>
 </html>
