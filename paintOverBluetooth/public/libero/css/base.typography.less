@@ -1,0 +1,98 @@
+/*= BLOG
+---------------------------------------------------------------------------------------------- */
+
+@font_family	: 'Roboto',Arial, sans-serif;
+@font_size		: 13px;
+@link_color		: #08c;
+
+body
+{
+	background: #f0f2f4;
+	color: #747678;
+	font-size: @font_size;
+	font-family: @font_family;
+	font-weight: 300;
+	text-shadow: 1px 1px 1px rgba(0,0,0,0.0004);
+}
+h1, h2, h3, h4, h5, h6
+{
+	color: #444;
+	margin-top: 0;
+	font-weight: 500;
+	line-height: 1.15;
+
+	small
+	{
+		font-size: 12px;
+		margin: 0 0 0 5px;
+	}
+}
+h1 { font-size: 28px; }
+h2 { font-size: 24px; }
+h3 { font-size: 20px; }
+h4 { font-size: 16px; }
+h5 { font-size: @font_size; }
+h6 { font-size: 11px; }
+strong, b
+{
+	font-weight: 500;
+}
+a
+{
+	color: @link_color;
+	&:hover,
+	&:focus
+	{
+		outline: none;
+	}
+}
+small,
+.small
+{
+	font-size: 90%;
+}
+.muted 
+{
+	color: #aaa;
+}
+form
+{
+	margin: 0;
+
+	fieldset 
+	{
+		border: 1px solid #e5e6e7;
+		.border-radius(2px);
+		padding: 25px;
+	}
+}
+select, textarea, input[type="text"], input[type="password"], 
+input[type="datetime"], input[type="datetime-local"], input[type="date"], input[type="month"], input[type="time"], input[type="week"], 
+input[type="number"], input[type="email"], input[type="url"], input[type="search"], input[type="tel"], input[type="color"], 
+.uneditable-input
+{
+	font-size: @font_size;
+	font-family: @font_family;
+	margin-bottom: 0;
+}
+label
+{
+	font-family: inherit;
+	font-weight: inherit;
+}
+label, input, button, select, textarea
+{
+	font-family: @font_family;
+	font-size: @font_size;
+}
+textarea.autosize-animated 
+{
+	-webkit-transition: height 0.2s;
+	-moz-transition: height 0.2s;
+	transition: height 0.2s;
+}
+.btn 
+{
+	font-family: @font_family;
+	font-weight: 500;
+}

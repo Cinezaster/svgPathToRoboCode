@@ -2,27 +2,114 @@
 <html>
 	<head>
 		<title>svg to robot control panel</title>
+		<link type="text/css" href="/libero/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+		<link type="text/css" href="/libero/css/theme.css" rel="stylesheet">
+		<link type="text/css" href="/libero/icons/font-awesome/css/font-awesome.css" rel="stylesheet">
+
+		<link type="text/css" href="http://fonts.googleapis.com/css?family=Roboto:400,400italic,700,700italic,500italic,500,300italic,300" rel="stylesheet">
+		<link type="text/css" href="http://fonts.googleapis.com/css?family=Fugaz+One|Leckerli+One" rel="stylesheet">
+
+		<style type="text/css">
+			.consoleLook {
+				background-color: #000 !important;
+				color: #00FF00;
+				font-family: 'Droid Sans Mono',courier !important;
+				font-style: normal;
+				font-weight: 400;
+			}
+		</style>
+
+
 		<script src="/siofu/client.js"></script>
 		<script src="/socket.io/socket.io.js"></script>
 		<script src="/bower_components/jquery/jquery.js"></script>
-		<style type="text/css">
-			#file_drop {
-				background-color: #FF0000;
-			}
-		</style>
+		<script src="/libero/js/jquery-ui-1.10.1.custom.min.js"></script>
+		<script src="/libero/bootstrap/js/bootstrap.min.js"></script>
+		<script type="text/javascript" src="/js/processing-1.4.1.min.js"></script>
 	</head>
 	<body>
-		<h1>SVG to Robot control panel</h1>
-		<hr>
-		
-<div id="file_drop" dropzone="copy" title="drop files for upload">Drop File
-	<p><label>Choose File: <input type="file" id="upload_input"/></label></p>
-</div>
-<div id="image"></div>
-
-		<p>Click to convert svg file to robo code and show result in canvas</p>
-		<p>Connect with robot over bluetooth</p>
-		<p>if connected to bluetooth send to robot.</p>
+		<div class="frame">
+			<div class="sidebar">
+				<div class="wrapper">
+					<a href="p#" class="profile">Controls</a>
+					<ul class="nav nav-list">
+						<li class="nav-header"><i class="icon-tasks"></i> Svg parsing</li>
+						<li><a href="#" id="upload_btn"><i class="icon-upload"></i>upload</a></li>
+						<li><a href="#"  class="process"><i class="icon-cogs"></i> process</a></li>
+						<li class="nav-header"><i class="icon-signal"></i> Bluetooth</li>
+						<li><a href="#"  class="search-bt"><i class="icon-search"></i> search device   <span class="search-status"></span></a></li>
+						<li class="nav-header">Robot</li>
+						<li><a class="paint"><i class="icon-print"></i> paint</a></li>
+						<li>
+							<div class="progress progress-danger small">
+								<div class="bar" style="width: 0%;"></div>
+							</div>
+						</li>
+					</ul>
+				</div>
+			</div>
+			<div class="content">
+				<div class="navbar navbar-static-tops">
+					<div class="navbar-inner">		
+						<a href="javascript:void(0);" class="btn pull-left toggle-sidebar hidden-desktop"><i class="icon-reorder"></i></a>
+							<a class="brand" href="index.html">LightSwingRobot</a>
+					</div>
+				</div>
+				<div class="content-body">
+					<section class="row-fluid">
+						<div class="span4">
+							<section class="module">
+								<div class="module-head">
+									<b>Svg Image</b>
+								</div><!--/.module-head-->
+								<div class="module-body">
+									<div id="image"></div>
+								</div><!--/.module-body-->
+							</section><!--/.module-->
+						</div>
+						<div class="span8">
+							<section class="module">
+								<div class="module-head">
+									<b>Processing script</b>
+								</div><!--/.module-head-->
+								<div class="module-body">
+									<div id="processing">
+									</div>
+								</div><!--/.module-body-->
+							</section><!--/.module-->
+						</div>
+					</section>
+					<section class="row-fluid">
+						<div class="span4">
+							<section class="module">
+								<div class="module-head">
+									<b>Bluetooth devices</b>
+								</div><!--/.module-head-->
+								<div class="module-body">
+									<ul class="bluetoothList">
+										
+									</ul>
+								</div><!--/.module-body-->
+							</section><!--/.module-->
+						</div>
+					</section>
+					<section class="row-fluid">
+						<div class="span12">
+							<section class="module">
+								<div class="module-head">
+									<b>Console</b>
+								</div><!--/.module-head-->
+								<div class="module-body consoleLook">
+									<div class="console">
+										
+									</div>
+								</div><!--/.module-body-->
+							</section><!--/.module-->
+						</div>
+					</section>
+				</div>
+			</div>
+		</div>
 
 		<script type="text/javascript">	
   			var socket = io.connect('http://localhost');
@@ -34,9 +121,7 @@
 			// Initialize instances:
 			var siofu = new SocketIOFileUpload(socket);
 
-			// Configure the three ways that SocketIOFileUpload can read files:
-			siofu.listenOnInput(document.getElementById("upload_input"));
-			siofu.listenOnDrop(document.getElementById("file_drop"));
+			document.getElementById("upload_btn").addEventListener("click", siofu.prompt, false);
 
 			// Do something when a file is uploaded:
 			siofu.addEventListener("complete", function(event){
@@ -47,8 +132,47 @@
 				}
 			});
 
-			socket.on('saved_image', function(data){				$('#image').html('<image src="/upload/'+data.file.base+'.svg">')
+			socket.on('saved_image', function(data){				
+				$('#image').html('<image src="/upload/'+data.file.base+'.svg">')
+			});
+			socket.on('processed', function(data){				
+				var $projDiv = $('#processing');
+				var canvasRef = $('<canvas id="project_canvas"/>');
+				var p = Processing.loadSketchFromSources('project_canvas', ['/processing/processing.pde']);
+				$projDiv.append(canvasRef); 
+			});
+
+			socket.on('console', function(data){				
+				$('.console').append('<div>'+data+'</div>');
+			});
+
+			socket.on('search_Bluetooth_stopped', function(){
+				$('.search-status').html('');
 			})
+
+			socket.on('connected_Bluetooth', function(data){
+				var element = $('.connect-device[data-address="'+data.address+'"]')
+				element.html(element[0].innerText + ' <b class="label label-success">live</b>');
+			})
+
+			socket.on('device', function(data){
+				console.log('')
+				$('.bluetoothList').append('<li><a class="connect-device" data-address ="'+ data.address +'">'+ data.name +'</li>');
+				$('.connect-device').on('click',function(event){
+				
+				var address = $(event.target).attr('data-address');
+				socket.emit('open_Bluetooth_Connection', address);
+			})
+			});
+
+			$('.process').click(function(){
+				socket.emit('process',{});
+			});
+			$('.search-bt').click(function(event){
+				$('.search-status').html(' <i class="icon-spinner"></i>');
+				$('.bluetoothList').html('');
+				socket.emit('search_Bluetooth',{});
+			});
 		</script>
 	</body>
 </html>

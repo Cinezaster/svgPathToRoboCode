@@ -1,0 +1,97 @@
+@import "mixins.less";
+
+
+body 
+{
+	padding: 0 !important;
+}
+
+.navbar,
+.content .content-head,
+.content .content-body
+{
+	padding-left:  15px;
+	padding-right: 15px;
+}
+
+.navbar
+{
+	text-align: center;
+	
+	a.brand 
+	{
+		display: inline-block;
+		font-size: 23px;
+	}
+}
+
+
+ /*= SIDEBAR HANDLER
+---------------------------------------------------------------------------------------------- */
+
+.frame
+{
+	overflow: hidden;
+}
+
+.sidebar 
+{
+	height: 100%;
+	min-height: 100%;
+	position: absolute;
+	left: -280px;
+
+	.wrapper 
+	{
+		padding-left:  15px;
+		padding-right: 15px;
+	}
+}
+
+.content 
+{
+	margin-left: 0;
+}
+
+.sidebar,
+.content 
+{
+	-webkit-transition: 500ms ease;
+	-moz-transition: 500ms ease;
+	-o-transition: 500ms ease;
+	-ms-transition: 500ms ease;
+	transition: 500ms ease;
+}
+
+body.show-sidebar
+{
+	background-position: -20px 0;
+
+	>.frame 
+	{
+		>.sidebar 
+		{
+			left: 0;
+		}
+
+		>.content 
+		{
+			left: 280px;
+		}
+	}
+}
+
+
+
+ /*= LOGIN
+---------------------------------------------------------------------------------------------- */
+
+.form-login
+{
+	.form 
+	{
+		display: block;
+		margin-left: 30px;
+		margin-right: 30px;
+	}
+}

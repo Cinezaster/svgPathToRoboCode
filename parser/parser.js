@@ -494,18 +494,25 @@ xml.on('end', function(){
 	if (output === "processing") {
 		processing = processing +"}";
 		fs.writeFile(__dirname+"/processing/processing.pde", processing, function(err) {
-	    if(err) {
-	        console.log(err);
-	    } else {
-	        console.log("The processing file was saved!");
-	    }
-	    var spawn = require('child_process').spawn,
+		    if(err) {
+		        console.log(err);
+		    } else {
+		        console.log("The processing file was saved!");
+		    }
+	    /*var spawn = require('child_process').spawn,
 	    ls    = spawn('processing-java', [
 	    	'--sketch='+ __dirname+'/processing', 
 	    	'--output='+ __dirname+'/tmp',
 	    	'--force',
 	    	'--run'
-	    	]);
+	    	]);*/
+		}); 
+		fs.writeFile(__dirname+"/../paintOverBluetooth/public/processing/processing.pde", processing, function(err) {
+		    if(err) {
+		        console.log(err);
+		    } else {
+		        console.log("The processing file was saved in public");
+		    }
 		}); 
 	};
 	

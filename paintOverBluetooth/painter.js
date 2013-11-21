@@ -19,13 +19,15 @@ BTserial.on('found', function(address, name) {
     // you might want to check the found address with the address of your
     // bluetooth enabled Arduino device here.
 	console.log('Found: ' + address + ' with name ' + name);
+
+	// TODO let the web-client know wich are all the bluetooth devices
     BTserial.findSerialPortChannel(address, function(channel) {
-    	console.log(channel);
+    	console.log('found bluetooth device with address: '+address + ' on channel: '+ channel);
         BTserial.connect(address, channel, function() {
             console.log('connected');
+
             process.stdin.resume();
             process.stdin.setEncoding('utf8');
-            console.log('Press "1" or "0" and "ENTER" to turn on or off the light.')
             process.stdin.on('data', function (data) {
                 BTserial.write(new Buffer(data,'ascii'), function (err, bytesWritten){
                 	if (err) {

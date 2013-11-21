@@ -1,0 +1,130 @@
+/*= THUMBNAILS
+---------------------------------------------------------------------------------------------- */
+
+@import "mixins.less";
+
+@thumb_spacing			: 10px;
+@thumb_spacing_large	: 20px;
+
+.thumbs,
+.thumbs>li 
+{
+	list-style: none;
+}
+
+.thumbs
+{
+	padding: 0;
+	margin: 0 0 -@thumb_spacing -@thumb_spacing;
+
+	&:before,
+	&:after
+	{
+		display: table;
+		content: "";
+		line-height: 0;
+	}
+
+	&:after
+	{
+		clear: both;
+	}
+
+	>li 
+	{
+		float: left;
+
+		>.thumb
+		{
+			display: block;
+			margin: 0 0 @thumb_spacing @thumb_spacing;
+		}
+	}
+
+
+	/** GRIDS **/
+
+	&.grid-1 >li { width: 100%; }
+	&.grid-2 >li { width: 50%; }
+	&.grid-3 >li { width: 33.3333333333% }
+	&.grid-4 >li { width: 25%; }
+	&.grid-5 >li { width: 20%; }
+	&.grid-10>li { width: 10%; }
+
+
+	/** FOR LARGER SPACING **/
+
+	&.spacing-large
+	{
+		margin: 0 0 -@thumb_spacing_large -@thumb_spacing_large;
+
+		>li
+		{
+			>.thumb 
+			{
+				margin: 0 0 @thumb_spacing_large @thumb_spacing_large;
+			}
+		}
+	}
+}
+
+
+/** STYLES FOR THUMBNAILS **/
+
+.img-radius
+{
+	.border-radius(3px);
+}
+.img-circle
+{
+	.border-radius(50%);
+}
+
+
+
+@media (min-width: 768px) and (max-width: 979px) {
+	.thumbs
+	{
+		&.grid-tablet-1 >li { width: 100%;}
+		&.grid-tablet-2 >li { width: 50%; }
+		&.grid-tablet-4 >li { width: 25%; }
+		&.grid-tablet-5 >li { width: 20%; }
+		&.grid-tablet-10>li { width: 10%; }
+
+		&.spacing-mobile-large
+		{
+			margin: 0 0 -@thumb_spacing_large -@thumb_spacing_large;
+
+			>li
+			{
+				>.thumb 
+				{
+					margin: 0 0 @thumb_spacing_large @thumb_spacing_large;
+				}
+			}
+		}
+	}
+}
+@media (max-width: 767px) {
+	.thumbs
+	{
+		&.grid-mobile-1 >li { width: 100%;}
+		&.grid-mobile-2 >li { width: 50%; }
+		&.grid-mobile-4 >li { width: 25%; }
+		&.grid-mobile-5 >li { width: 20%; }
+		&.grid-mobile-10>li { width: 10%; }
+
+		&.spacing-mobile-large
+		{
+			margin: 0 0 -@thumb_spacing_large -@thumb_spacing_large;
+
+			>li
+			{
+				>.thumb 
+				{
+					margin: 0 0 @thumb_spacing_large @thumb_spacing_large;
+				}
+			}
+		}
+	}
+}
