@@ -4,13 +4,19 @@ var express = require('express')
   , io = require('socket.io').listen(server)
   , SocketIOFileUploadServer = require('socketio-file-upload')
   , BTSP = require('bluetooth-serial-port')
-  , BTserial = new BTSP.BluetoothSerialPort();
+  , BTserial = new BTSP.BluetoothSerialPort()
+  , fs = require('fs')
+  , painterPositions =[];
 
 server.listen(3000);
 
-app.use(SocketIOFileUploadServer.router).use(express.static(__dirname + '/public'));
+app.use(SocketIOFileUploadServer.router);
+app.use(express.static(__dirname + '/public'));
+app.use('/uploads',express.static(__dirname + '/public'));
 
 io.sockets.on('connection', function (socket) {
+
+
 
 	 // Make an instance of SocketIOFileUploadServer and listen on this socket:
     var uploader = new SocketIOFileUploadServer();
@@ -23,19 +29,35 @@ io.sockets.on('connection', function (socket) {
     // Do something when a file is saved:
 	uploader.on("saved", function(event){
 		socket.emit('saved_image', event);
-	    console.log(event.file);
+    });
 
-	    socket.on('process',function(data){
+	socket.on('process',function(data){
+
+	    	var stepData = '';
 	    	var spawn = require('child_process').spawn,
 		    ls = spawn('node', [
 		    	'../parser/parser.js', 
-		    	event.file.pathName,
+		    	__dirname +"/public/upload/"+ data,
 		    	'scara',
 		    	'processing'
 		    ]);
 
 		    ls.stdout.on('data', function (data) {
-	  			console.log('stdout: ' + data);
+	  			stepData += data
+			});
+			ls.stdout.on('end', function () {
+				console.log(typeof stepData);
+	  			try {
+      				var data = JSON.parse(stepData);
+    			} catch (er) {
+     				// uh oh!  bad json!
+     				console.log('error: '+ er.message);
+    			}
+    			
+    			if (data.painterPositions !== undefined){
+    				painterPositions = data.painterPositions;
+    				console.log(painterPositions);
+    			}
 			});
 
 			ls.stderr.on('data', function (data) {
@@ -44,9 +66,14 @@ io.sockets.on('connection', function (socket) {
 
 			ls.on('close', function (code) {
 			  console.log('child process exited with code ' + code);
-			  socket.emit('processed',{});
+			  socket.emit('processed',data);
 			});
 	    })
+
+    socket.on('giveFiles', function(){
+    	fs.readdir(__dirname +"/public/upload", function(err,files){
+			socket.emit('giveFiles',files);
+		});
     });
 
     
@@ -79,8 +106,6 @@ io.sockets.on('connection', function (socket) {
 		console.log('finished searching')
 	})
 
-
-
     socket.on('open_Bluetooth_Connection',function(address){
     	socket.emit('console','try to connect to device with address: '+address);
     	console.log('try to connect to device with address: '+address);
@@ -103,17 +128,36 @@ io.sockets.on('connection', function (socket) {
     	if (!BTserial.isOpen()) {
     		socket.emit('console','Bluetooth connectie is gesloten');
     	}
+    });
+
+    socket.on('paint', function(){
+    	if (BTserial.isOpen()) {
+    		console.log(painterPositions);
+    		socket.emit('paint',painterPositions);
+    		// send home signal
+    		// wait for homeing signal
+    		// for loop
+    		// send first position
+    		// wait for question next signal
+    		// send to web-client progress
+    		// send next position
+    		// end for loop
+    		// deconnect stepper drivers so the inertia can flow out of system
+    	} else {
+    		socket.emit('console','no bluetooth connection');
+    	}
+
     })
 
     socket.on('start_Painting',function(){
     	if (BTserial.isOpen()) {
 			// paint
 			BTserial.write(new Buffer('p121s234l1\r','ascii'), function (err, bytesWritten){
-                	if (err) {
-                		console.log(err);
-                		socket.emit('error',{message: "fail to write to robot"});
-                	};
-                });
+            	if (err) {
+            		console.log(err);
+            		socket.emit('error',{message: "fail to write to robot"});
+            	};
+            });
 		}
     });
 });

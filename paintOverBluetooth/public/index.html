@@ -17,6 +17,9 @@
 				font-style: normal;
 				font-weight: 400;
 			}
+			svg circle{
+				fill: white;
+			}
 		</style>
 
 
@@ -35,11 +38,11 @@
 					<ul class="nav nav-list">
 						<li class="nav-header"><i class="icon-tasks"></i> Svg parsing</li>
 						<li><a href="#" id="upload_btn"><i class="icon-upload"></i>upload</a></li>
-						<li><a href="#"  class="process"><i class="icon-cogs"></i> process</a></li>
+						<li><a href="#"  class="process" data-image=""><i class="icon-cogs"></i> process</a></li>
 						<li class="nav-header"><i class="icon-signal"></i> Bluetooth</li>
 						<li><a href="#"  class="search-bt"><i class="icon-search"></i> search device   <span class="search-status"></span></a></li>
 						<li class="nav-header">Robot</li>
-						<li><a class="paint"><i class="icon-print"></i> paint</a></li>
+						<li><a class="paint" href="#"><i class="icon-print"></i> paint</a></li>
 						<li>
 							<div class="progress progress-danger small">
 								<div class="bar" style="width: 0%;"></div>
@@ -57,23 +60,35 @@
 				</div>
 				<div class="content-body">
 					<section class="row-fluid">
-						<div class="span4">
+						<div class="span2">
 							<section class="module">
 								<div class="module-head">
-									<b>Svg Image</b>
+									<b>Svg List</b>
 								</div><!--/.module-head-->
 								<div class="module-body">
-									<div id="image"></div>
+									<ul class="svg-list">
+										
+									</ul>
+								</div><!--/.module-body-->
+							</section>
+						</div>
+						<div class="span5">
+							<section class="module">
+								<div class="module-head">
+									<b>Svg Image <span class="svg-image-name"></span></b>
+								</div><!--/.module-head-->
+								<div class="module-body">
+									<div id="image" style="text-align:center;"></div>
 								</div><!--/.module-body-->
 							</section><!--/.module-->
 						</div>
-						<div class="span8">
+						<div class="span5">
 							<section class="module">
 								<div class="module-head">
-									<b>Processing script</b>
+									<b>Processing script <span class="svg-processing-name"></span></b>
 								</div><!--/.module-head-->
 								<div class="module-body">
-									<div id="processing">
+									<div id="processing" style="text-align:center;">
 									</div>
 								</div><!--/.module-body-->
 							</section><!--/.module-->
@@ -126,20 +141,34 @@
 			// Do something when a file is uploaded:
 			siofu.addEventListener("complete", function(event){
 				if(event.success) {
-					console.log(event.file.name);
+					//console.log(event.file.name);
 				} else {
 					console.log("error");
 				}
 			});
 
-			socket.on('saved_image', function(data){				
-				$('#image').html('<image src="/upload/'+data.file.base+'.svg">')
+			var selectImage = function(fileName){
+				$('#image').html('<image src="/upload/'+fileName+'">');
+				$('.process').attr('data-image',fileName);
+				$('.svg-image-name').html('"'+fileName+'"');
+			}
+
+			socket.on('saved_image', function(data){
+				selectImage(data.file.base+'.svg');
+				setTimeout(function(){
+					socket.emit('giveFiles',{});
+				},2000);
+					
 			});
+
+
 			socket.on('processed', function(data){				
 				var $projDiv = $('#processing');
 				var canvasRef = $('<canvas id="project_canvas"/>');
 				var p = Processing.loadSketchFromSources('project_canvas', ['/processing/processing.pde']);
-				$projDiv.append(canvasRef); 
+				$projDiv.html(canvasRef);
+				$('.svg-processing-name').html('"'+data+'"');
+
 			});
 
 			socket.on('console', function(data){				
@@ -160,19 +189,40 @@
 				$('.bluetoothList').append('<li><a class="connect-device" data-address ="'+ data.address +'">'+ data.name +'</li>');
 				$('.connect-device').on('click',function(event){
 				
-				var address = $(event.target).attr('data-address');
-				socket.emit('open_Bluetooth_Connection', address);
-			})
+					var address = $(event.target).attr('data-address');
+					socket.emit('open_Bluetooth_Connection', address);
+				})
 			});
 
-			$('.process').click(function(){
-				socket.emit('process',{});
+			socket.emit('giveFiles',{});
+
+			socket.on('giveFiles',function(data){
+				$('.svg-list').html("");
+				for (var i = 0; i < data.length; i++) {
+					$('.svg-list').append('<li><a class="image" href="#">'+data[i]+'</a></li>');
+				};
+				$('.image').click(function(e){
+					selectImage(e.currentTarget.innerText);	
+				});
+			})
+
+			socket.on('paint',function(data){
+				console.log(data);
+			})
+
+			$('.process').click(function(e){
+				socket.emit('process', $(e.currentTarget).attr('data-image') );
 			});
+
 			$('.search-bt').click(function(event){
 				$('.search-status').html(' <i class="icon-spinner"></i>');
 				$('.bluetoothList').html('');
 				socket.emit('search_Bluetooth',{});
 			});
+
+			$('.paint').click(function(){
+				socket.emit('paint');
+			})
 		</script>
 	</body>
 </html>

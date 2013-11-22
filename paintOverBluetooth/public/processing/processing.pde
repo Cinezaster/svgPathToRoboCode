@@ -4,7 +4,7 @@ noLoop();
 }
  
  void draw() {
- background(102);
+ background(255);
 noFill();
 stroke(255);
 stroke(0);
