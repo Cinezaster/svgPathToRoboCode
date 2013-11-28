@@ -453,13 +453,17 @@ xml.on('end', function(){
 		var compensatie = [0,0]
 		for (var i = 1; i < arduinoAngles.length; i++) {
 			for (var j = 0; j < 2; j++) {
-				arduinoAngles[i][j] = arduinoAngles[i][j] + compensatie[j];
-				if ( Math.abs(arduinoAngles[i][j]- arduinoAngles[i-1][j]) > 180) {
-					if (Math.abs(arduinoAngles[i][j] + 360 - arduinoAngles[i-1][j]) < 180) {
-						compensatie[j] = compensatie[j] + 360;
-					} else if (Math.abs(arduinoAngles[i][j] - 360 - arduinoAngles[i-1][j]) < 180){
-						compensatie[j] = compensatie[j] - 360;
-					}
+				// Bepaal de range waartussen de hoek moet zitten nooit meer of minder dan 180° van de vorige
+				var newValue = arduinoAngles[i][j] + compensatie[j]
+				var minValue = arduinoAngles[i-1][j]-180;
+				var maxValue = arduinoAngles[i-1][j]+180;
+				if (newValue < minValue) {
+					compensatie[j] = compensatie[j] + 360;
+					i--;
+				} else if (newValue > maxValue) {
+					compensatie[j] = compensatie[j] - 360;
+					i--;
+				} else {
 					arduinoAngles[i][j] = arduinoAngles[i][j] + compensatie[j];
 				}
 			};
