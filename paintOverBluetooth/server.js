@@ -47,16 +47,16 @@ io.sockets.on('connection', function (socket) {
 			});
 			ls.stdout.on('end', function () {
 				console.log(typeof stepData);
+				console.log(stepData);
 	  			try {
       				var data = JSON.parse(stepData);
+      				if (data.painterPositions !== undefined){
+    				painterPositions = data.painterPositions;
+    				console.log(painterPositions);
+    			}
     			} catch (er) {
      				// uh oh!  bad json!
      				console.log('error: '+ er.message);
-    			}
-    			
-    			if (data.painterPositions !== undefined){
-    				painterPositions = data.painterPositions;
-    				console.log(painterPositions);
     			}
 			});
 
@@ -78,22 +78,29 @@ io.sockets.on('connection', function (socket) {
 
     
 
-    socket.on('search_Bluetooth', function(){
-    	socket.emit('console','start searching for bluetooth device');
-    	console.log('start searching for bluetooth device:');
-    	BTserial.close();
-    	BTserial.inquire();
+    socket.on('search_Bluetooth', function(data){
+    	if (data == "new") {
+    		socket.emit('console','start searching for bluetooth device');
+    		console.log('start searching for bluetooth devices:');
+    		BTserial.close();
+    		BTserial.inquire();
+    	} else {
+    		for (var i = 0; i < BTDevices.length; i++) {
+    			socket.emit('device',{address: TDevices[i].address, name: TDevices[i].name, channel: TDevices[i].channel});
+    		}
+    	}
+    	
     });
+
+    var BTDevices = [];
 
     BTserial.on('found', function(address, name) {
-    	console.log('Found: ' + address + ' with name ' + name);
-    	socket.emit('device',{address: address, name: name});
-    	socket.emit('console','found device: '+address + ' with name: '+name);
+    	BTserial.findSerialPortChannel(address, function(channel) {
+    		socket.emit('device',{address: address, name: name, channel: channel});
+    		socket.emit('console','found device: '+address + ' with name: '+name + " on channel: " + channel);
+    		BTDevices.push({address: address, name: name, channel: channel});
+    	});
     });
-
-    BTserial.on('data', function(data) {
-	console.log(data.toString('ascii'));
-	});
 
 	BTserial.on('failure',function(err){
 		socket.emit('console','failure: '+ err);
@@ -107,22 +114,22 @@ io.sockets.on('connection', function (socket) {
 	})
 
     socket.on('open_Bluetooth_Connection',function(address){
-    	socket.emit('console','try to connect to device with address: '+address);
-    	console.log('try to connect to device with address: '+address);
-    	BTserial.findSerialPortChannel(address, function(channel) {
-    		socket.emit('console','found bluetooth channel '+ channel);
-    		console.log('found bluetooth channel '+ channel);
-    		BTserial.connect(address, channel, function() {
-    			socket.emit('console','Bluetooth connected with '+ address);
-    			console.log('Bluetooth connected with '+ address);
-    			socket.emit('connected_Bluetooth',{address:address});
-    		},function (){
-    			socket.emit('console','Cannot connect');
-    			console.log('Cannot connect');
-    		})
-    	})
-    	
+    	for (var i = 0; i < BTDevices.length; i++) {
+    		var channel;
+    		if (BTDevices[i].address === address) {
+    			channel = BTDevices[i].channel;
+    		};
+    	};
+		BTserial.connect(address, channel, function() {
+			socket.emit('console','Bluetooth connected with '+ address);
+			console.log('Bluetooth connected with '+ address);
+			socket.emit('connected_Bluetooth',{address:address});
+		},function (){
+			socket.emit('console','Cannot connect');
+			console.log('Cannot connect');
+		})
     });
+
     socket.on('close_Bluetooth_Connection', function(){
     	BTserial.close();
     	if (!BTserial.isOpen()) {
@@ -132,33 +139,75 @@ io.sockets.on('connection', function (socket) {
 
     socket.on('paint', function(){
     	if (BTserial.isOpen()) {
-    		console.log(painterPositions);
-    		socket.emit('paint',painterPositions);
-    		// send home signal
-    		// wait for homeing signal
-    		// for loop
-    		// send first position
-    		// wait for question next signal
-    		// send to web-client progress
-    		// send next position
-    		// end for loop
-    		// deconnect stepper drivers so the inertia can flow out of system
+    		console.log('paint');
+    		BTserial.write(new Buffer('0,0,0,0\n', 'utf8'), function (err, bytesWritten){
+            	if (err) {
+            		console.log(err);
+            		socket.emit('error',{message: "fail to write to robot"});
+            	};
+            	console.log("BytesWritten : "+bytesWritten)
+            });
     	} else {
     		socket.emit('console','no bluetooth connection');
     	}
+    });
 
-    })
+    var paintPosition;
+    var lastPostion;
 
-    socket.on('start_Painting',function(){
-    	if (BTserial.isOpen()) {
-			// paint
-			BTserial.write(new Buffer('p121s234l1\r','ascii'), function (err, bytesWritten){
+    var paint = function(){
+    	if(paintPosition !== painterPositions.length) {
+    		console.log(painterPositions[paintPosition].p+','+painterPositions[paintPosition].s+','+painterPositions[paintPosition].l+',1\n');
+    		if (lastPostion !== paintPosition) {
+    			lastPostion = paintPosition;
+	    		BTserial.write(new Buffer(painterPositions[paintPosition].p+','+painterPositions[paintPosition].s+','+painterPositions[paintPosition].l+',1\n', 'utf8'), function (err, bytesWritten){
+	            	if (err) {
+	            		console.log(err);
+	            		socket.emit('error',{message: "fail to write to robot"});
+	            	};
+	            	paintPosition++;
+	            	socket.emit('paint',{progress: (painterPositions.length/paintPosition)*100});
+	            });
+    		}
+    	} else {
+    		BTserial.write(new Buffer('0,0,0,2\n', 'utf8'), function (err, bytesWritten){
             	if (err) {
             		console.log(err);
             		socket.emit('error',{message: "fail to write to robot"});
             	};
             });
-		}
-    });
+    	}
+    };
+
+    var startPaint = function (){
+    	console.log('start Painting')
+    	paintPosition = 0;
+    	paint();
+    };
+
+    var endPaint = function(){
+    	socket.emit('console','end of painting')
+    };
+
+    var getFromRobot = function(data){
+    	console.log('recieved from Robot '+ data);
+    	if (data == "h"){
+    		startPaint()
+    	} else if (data == "p") {
+    		paint();
+    	} else if (data == "e") {
+    		endPaint();
+    	}
+    }
+    var dataBuffer = "";
+    BTserial.on('data', function(buffer) {
+    	dataBuffer = dataBuffer + buffer.toString('utf8');
+            if(dataBuffer.indexOf("\n") != -1){
+                getFromRobot(dataBuffer.slice(0,1));
+                dataBuffer = "";
+            }
+        
+	});
+
 });
 

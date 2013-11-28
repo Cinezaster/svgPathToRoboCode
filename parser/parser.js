@@ -78,6 +78,13 @@ xml.on('end', function(){
 		}
 	};
 
+	for (var i = allPaths.length - 1; i >= 0; i--) {
+		var p = allPaths[i].points;
+		if (allPaths[i].type === "z") {
+			allPaths.splice(i, 1);
+		};
+	};
+
 	// change all the relative positioned paths to absolute paths
 	for (var i = 1; i < allPaths.length; i++) {
 		var absolutePointsArray = new Array();
@@ -104,6 +111,7 @@ xml.on('end', function(){
 				} else if(allPaths[i].type === "z") {
 					for (var j = i - 1; j >= 0; j--) {
 						if (allPaths[j].type === "M") {
+
 							absolutePointsArray[2] = allPaths[j].points[0]
 							absolutePointsArray[3] = allPaths[j].points[1]
 							break;
@@ -136,12 +144,13 @@ xml.on('end', function(){
 					}
 			    }
 		}
-		//console.log(absolutePointsArray);
-		if(allPaths[i].type !== "M") {
+
+		
+		if(allPaths[i].type !== "M" && allPaths[i].type !== "C") {
 			allPaths[i].type = allPaths[i].type.toUpperCase()
 			allPaths[i].points = absolutePointsArray;
 		}
-		if (allPaths[i].type === "H" || allPaths[i].type === "V" || allPaths[i].type === "Z") {
+		if (allPaths[i].type === "H" || allPaths[i].type === "V") {
 			allPaths[i].type = "L"
 		}
 	};
@@ -194,6 +203,7 @@ xml.on('end', function(){
 			allPaths[i].points = points
 			allPaths[i].paint = false
 
+
 		} else if (allPaths[i].type === "S") {
 			var prevX = allPaths[i-1].points[allPaths[i-1].points.length-2];
 			var prevY = allPaths[i-1].points[allPaths[i-1].points.length-1];
@@ -235,8 +245,21 @@ xml.on('end', function(){
 			]
 			allPaths[i].type = "C"
 			allPaths[i].points = points
-		} 
+		} else if (allPaths[i].type === "C" && allPaths[i].points.length === 6) {
+			var points = [
+				allPaths[i-1].points[allPaths[i-1].points.length-2],
+				allPaths[i-1].points[allPaths[i-1].points.length-1],
+				allPaths[i].points[0], 
+				allPaths[i].points[1], 
+				allPaths[i].points[2], 
+				allPaths[i].points[3], 
+				allPaths[i].points[4], 
+				allPaths[i].points[5]
+			]
+			allPaths[i].points = points
+		}
 	};
+
 
 	// check if all the curves are in one fluid line if not add a new curve in between to smooth out this curve
 	for (var i = 1; i < allPaths.length-1; i++) {
@@ -280,10 +303,16 @@ xml.on('end', function(){
 						var opositeX = fixedX +(fixedX - dirX);
 						var opositeY = fixedY +(fixedY - dirY);
 						var length = Math.sqrt(Math.pow((fixedX-opositeX),2)+Math.pow((fixedY-opositeY),2));
+						
 						if (length < 20 ) {
 							opositeX = fixedX +4*(fixedX - dirX);
 							opositeY = fixedY +4*(fixedY - dirY);
+						} else if (length > 80) {
+							opositeX = fixedX +(fixedX - dirX)/2;
+							opositeY = fixedY +(fixedY - dirY)/2;
 						}
+
+
 						var fixedX2 = allPaths[i+1].points[0];
 						var fixedY2 = allPaths[i+1].points[1];
 						var dirX2 = allPaths[i+1].points[2];
@@ -297,9 +326,11 @@ xml.on('end', function(){
 						var length2 = Math.sqrt(Math.pow((fixedX2-opositeX2),2)+Math.pow((fixedY2-opositeY2),2));						
 							
 						if (length2 < 20) {
-
 							opositeX2 = fixedX2 +4*(fixedX2 - dirX2);
 							opositeY2 = fixedY2 +4*(fixedY2 - dirY2);
+						} else if (length2 > 80) {
+							opositeX2 = fixedX2 +(fixedX2 - dirX2)/2;
+							opositeY2 = fixedY2 +(fixedY2 - dirY2)/2;
 						}
 						
 						//TODO check if the oposite value fall out of the drawing box
@@ -345,10 +376,11 @@ xml.on('end', function(){
 		}
 	};
 
+	
 	// PROCESSING OUTPUT show bezier curves
 	if (output === "processing" ) {
 		for (var i = 0 ; i < allPaths.length; i++) {
-			var color = (allPaths[i].paint)? 255 : 0 ;
+			var color = (allPaths[i].paint)? 0 : 230 ;
 			processing = processing + "stroke("+ color +")\;\r\n"
 			if (allPaths[i].type === "C") {
 
@@ -376,7 +408,7 @@ xml.on('end', function(){
 	var points = new PointsOnCurve(resolution,allPaths);
 
 	// PROCESSING OUTPUT show bezier curves
-	if (output === "processing" ) {
+	if (output === "processingx" ) {
 		var color = 255;
 		for (var i = 0 ; i < points.length; i++) {
 			var newColor = (points[i].paint)? 255 : 0 ;	
@@ -388,16 +420,15 @@ xml.on('end', function(){
 			
 		};
 	};
-
 	
 	points.shift();
 	if (conversionType === "scara") {
 		var xyPoints = new CartesianToScara(points);
 		// PROCESSING OUTPUT show two arms based on there angle
-		if (output === "processing") {
+		if (output === "processingx") {
 			processing = processing + "colorMode(HSB, "+xyPoints.length+")\;\r\n"
 			for (var i = 1 ; i < xyPoints.length; i++) {
-				processing = processing + "stroke("+i+","+xyPoints.length+", 100)\;\r\n"
+				processing = processing + "stroke("+i+","+xyPoints.length+", 200)\;\r\n";
 				var	secondXPoint = 200 + Math.cos(xyPoints[i].step0*Math.PI/180)* 100 ;
 				var secondYPoint = 200 + Math.sin(xyPoints[i].step0*Math.PI/180)* 100 ;
 				processing = processing + "line( 200, 200, "+secondXPoint+", "+secondYPoint+")\;\r\n";

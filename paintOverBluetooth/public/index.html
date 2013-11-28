@@ -207,7 +207,7 @@
 			})
 
 			socket.on('paint',function(data){
-				console.log(data);
+				$('.bar').css({width:data.process});
 			})
 
 			$('.process').click(function(e){
@@ -217,11 +217,13 @@
 			$('.search-bt').click(function(event){
 				$('.search-status').html(' <i class="icon-spinner"></i>');
 				$('.bluetoothList').html('');
-				socket.emit('search_Bluetooth',{});
+				socket.emit('search_Bluetooth',"new");
 			});
+			socket.emit('search_Bluetooth',"");
+
 
 			$('.paint').click(function(){
-				socket.emit('paint');
+				socket.emit('paint' ,{});
 			})
 		</script>
 	</body>
