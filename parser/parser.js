@@ -38,10 +38,7 @@ var fs = require('fs'),
 	svgData,
 	totalLength = 0,
 	resolution = 5,
-	processing = "void setup() {\r\nsize(400, 400);\r\nnoLoop();\r\n}\r\n \r\n void draw() {\r\n background(255);\r\nnoFill()\;\r\n",
-	arduino = "#include <AccelStepper.h>\r\n"+
-		"AccelStepper stepper1(AccelStepper::DRIVER, 8, 9);\r\n"+
-		"AccelStepper stepper2(AccelStepper::DRIVER, 10, 11);\r\n";
+	processing = "void setup() {\r\nsize(400, 400);\r\nnoLoop();\r\n}\r\n \r\n void draw() {\r\n background(255);\r\nnoFill()\;\r\n";
 
 
 xml.collect('path');
@@ -481,7 +478,6 @@ xml.on('end', function(){
 			arduinoSteps.push(stepsObject);
 		};
 
-
 		var painterPositions = new Array();
 		for (var i = 0; i < arduinoAngles.length; i++) {
 			var stepsObject = {
@@ -494,74 +490,25 @@ xml.on('end', function(){
 		console.info(JSON.stringify({painterPositions: painterPositions}));
 	};
 
-	arduino = arduino + "int anglePosition = 0;\r\n"+
-						"int led = 13;\r\n"+
-						"float positions[][3][2]= {\r\n";
-
-	for (var i = 0; i < arduinoSteps.length; i++) {
-		arduino = arduino + "{{"+arduinoSteps[i][0][0]+","+arduinoSteps[i][0][1]+"},{"+arduinoSteps[i][1]+",0}},\r\n"
-	};
-
-	arduino = arduino + "};\r\n"+
-						"void setup(){\r\n"+
- 						"	pinMode(led, OUTPUT);\r\n"+
- 						"	stepper1.setMaxSpeed(1000);\r\n" +
- 						"	stepper1.moveTo(positions[anglePosition][0][0]);\r\n"+
-						" 	stepper1.setSpeed(200);\r\n"+
-						"	stepper2.setMaxSpeed(1000);\r\n" +
-						" 	stepper2.moveTo(positions[anglePosition][0][1]);\r\n"+
-						" 	stepper2.setSpeed(200);\r\n"+
-						"}\r\n"+
-						"void loop(){\r\n"+
-  						"	stepper1.runSpeed();\r\n"+
-						"  	stepper2.runSpeed();\r\n"+
-						"  	if(stepper1.distanceToGo() == 0 && stepper2.distanceToGo() == 0){\r\n"+
-						"    	anglePosition++;\r\n"+
-						"    	stepper1.moveTo(positions[anglePosition][0][0]);\r\n"+
-						"    	stepper2.moveTo(positions[anglePosition][0][1]);\r\n"+
-						"    	stepper1.setSpeed((positions[anglePosition][0][0] - positions[anglePosition-1][0][0])*10);\r\n"+
-						"    	stepper2.setSpeed((positions[anglePosition][0][1] - positions[anglePosition-1][0][1])*10);\r\n"+
-						"    	if(positions[anglePosition][1][0] == 1){\r\n"+
-						"       		digitalWrite(led, HIGH);\r\n"+
-						"    	} else {\r\n"+
-						"       		digitalWrite(led, LOW);\r\n"+
-						"     	}\r\n"+
-						"   }\r\n"+
-						"}\r\n";
-	fs.writeFile("/Users/Nelissen/Documents/Arduino/LightPaintSwing/LightPaintSwing.ino", arduino, function(err) {
-	    if(err) {
-	        console.log(err);
-	    } else {
-	        //console.log("The arduino file was saved!");
-	    }
-	});
-
-	// PROCESSING OUTPUT finish the processing data and write to processing file and execupte that file.
 	if (output === "processing") {
 		processing = processing +"}";
-		fs.writeFile(__dirname+"/processing/processing.pde", processing, function(err) {
-		    if(err) {
-		        console.log(err);
-		    } else {
-		        //console.log("The processing file was saved!");
-		    }
-	    /*var spawn = require('child_process').spawn,
-	    ls    = spawn('processing-java', [
-	    	'--sketch='+ __dirname+'/processing', 
-	    	'--output='+ __dirname+'/tmp',
-	    	'--force',
-	    	'--run'
-	    	]);*/
-		}); 
-		fs.writeFile(__dirname+"/../paintOverBluetooth/public/processing/processing.pde", processing, function(err) {
-		    if(err) {
-		        console.log(err);
-		    } else {
-		        //console.log("The processing file was saved in public");
-		    }
+
+		// PROCESSING OUTPUT finish the processing data and write to processing file and execupte that file.
+		fs.writeFile(__dirname+"/../public/processing/processing.pde", processing, function(err) {
+			if(err) {
+			    console.log(err);
+			} else {
+			    //console.log("The processing file was saved in public");
+			}
+			/*var spawn = require('child_process').spawn
+				, ls    = spawn('processing-java', [
+		    		'--sketch='+ __dirname+'/../paintOverBluetooth/public/processing', 
+		    		'--output='+ __dirname+'/tmp',
+		    		'--force',
+		    		'--run'
+		    	]);*/
 		}); 
 	};
-	
 })
 
 
