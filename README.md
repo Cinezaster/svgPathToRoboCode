@@ -1,5 +1,8 @@
 svgPathToRoboCode
 =================
+first run `npm install`
+in /public run `bower install'
+
 
 `node server.js`
 
