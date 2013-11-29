@@ -1,6 +1,11 @@
 svgPathToRoboCode
 =================
 
+`node server.js`
+
+http://localhost:3000
+
+
 svg parser that turns svg paths in stepper instructions
 
 supported type of robots:
