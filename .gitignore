@@ -3,5 +3,5 @@ node_modules
 public/bower_components
 parser/processing
 parser/tmp
-public/processing
 public/upload
+public/processing
