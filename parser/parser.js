@@ -132,7 +132,7 @@ xml.on('end', function(){
 		} else if(allPaths[i].type == "L") {
 					absolutePointsArray[2] = allPaths[i].points[0]
 					absolutePointsArray[3] = allPaths[i].points[1]
-		} else if(allPaths[i].type == "S") {
+		} else if(allPaths[i].type == "S" || allPaths[i].type == "C") {
 				for (var j = 0; j < allPaths[i].points.length; j++) {
 					if (j%2 == 0) {
 						absolutePointsArray[j+2] = allPaths[i].points[j]
@@ -140,10 +140,10 @@ xml.on('end', function(){
 						absolutePointsArray[j+2] = allPaths[i].points[j]
 					}
 			    }
-		}
+		} 
 
 		
-		if(allPaths[i].type !== "M" && allPaths[i].type !== "C") {
+		if(allPaths[i].type !== "M") {
 			allPaths[i].type = allPaths[i].type.toUpperCase()
 			allPaths[i].points = absolutePointsArray;
 		}
@@ -489,6 +489,8 @@ xml.on('end', function(){
 		};
 		console.info(JSON.stringify({painterPositions: painterPositions}));
 	};
+
+
 
 	if (output === "processing") {
 		processing = processing +"}";
