@@ -37,8 +37,8 @@ var fs = require('fs'),
 	allPaths = new Array(), 
 	svgData,
 	totalLength = 0,
-	resolution = 5,
-	processing = "void setup() {\r\nsize(400, 400);\r\nnoLoop();\r\n}\r\n \r\n void draw() {\r\n background(255);\r\nnoFill()\;\r\n";
+	resolution = 3,
+	processing = "void setup() {\r\nsize(400, 400);\r\nnoLoop();\r\n}\r\n \r\n void position(x,y,l) {\r\n if(l == 0) {\r\nstroke(#FFCC00);\r\n} else {\r\nstroke(#00CCFF);\r\n}\r\n ellipse(x,y,1,1)}\r\n void draw() {\r\n background(255);\r\nnoFill()\;\r\n";
 
 
 xml.collect('path');
@@ -482,8 +482,10 @@ xml.on('end', function(){
 		for (var i = 0; i < arduinoAngles.length; i++) {
 			var stepsObject = {
 				p : Math.round(arduinoAngles[i][0]*stepsPerDegree),
-				s :Math.round(-arduinoAngles[i][1]*stepsPerDegree),
-				l :arduinoAngles[i][2]
+				s : Math.round(-arduinoAngles[i][1]*stepsPerDegree),
+				l : arduinoAngles[i][2],
+				x : Math.round(xyPoints[i].x),
+				y : Math.round(xyPoints[i].y)
 			}
 			painterPositions.push(stepsObject);
 		};

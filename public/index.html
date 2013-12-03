@@ -48,6 +48,7 @@
 								<div class="bar" style="width: 0%;"></div>
 							</div>
 						</li>
+						<li><a href="#" class="stopPaint">stop painting</a>
 					</ul>
 				</div>
 			</div>
@@ -160,7 +161,7 @@
 				},2000);
 					
 			});
-
+var processingInstance;
 
 			socket.on('processed', function(data){				
 				var $projDiv = $('#processing');
@@ -168,6 +169,7 @@
 				var p = Processing.loadSketchFromSources('project_canvas', ['/processing/processing.pde']);
 				$projDiv.html(canvasRef);
 				$('.svg-processing-name').html('"'+data+'"');
+				processingInstance = Processing.getInstanceById('project_canvas');
 
 			});
 
@@ -205,9 +207,12 @@
 					selectImage(e.currentTarget.innerText);	
 				});
 			})
-
 			socket.on('paint',function(data){
-				$('.bar').css({width:data.process});
+				$('.bar').css('width',100-data.progress+ "%");
+	            if (!processingInstance) {
+	                processingInstance = Processing.getInstanceById('project_canvas');
+	            }
+				processingInstance.position(data.x,data.y,data.l); 
 			})
 
 			$('.process').click(function(e){
@@ -219,11 +224,15 @@
 				$('.bluetoothList').html('');
 				socket.emit('search_Bluetooth',"new");
 			});
-			socket.emit('search_Bluetooth',"");
+
+			socket.emit('search_Bluetooth',{});
 
 
 			$('.paint').click(function(){
 				socket.emit('paint' ,{});
+			})
+			$('.stopPaint').click(function(){
+				socket.emit('stopPaint',{});
 			})
 		</script>
 	</body>

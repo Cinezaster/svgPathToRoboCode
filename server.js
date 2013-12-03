@@ -46,14 +46,12 @@ io.sockets.on('connection', function (socket) {
 	  			stepData += data
 			});
 			ls.stdout.on('end', function () {
-				console.log(typeof stepData);
-				console.log(stepData);
 	  			try {
-      				var data = JSON.parse(stepData);
+      			    var data = JSON.parse(stepData);
       				if (data.painterPositions !== undefined){
-    				painterPositions = data.painterPositions;
-    				console.log(painterPositions);
-    			}
+    				    painterPositions = data.painterPositions;
+                        console.log("points: "+painterPositions.length);
+                    }
     			} catch (er) {
      				// uh oh!  bad json!
      				console.log('error: '+ er.message);
@@ -76,7 +74,7 @@ io.sockets.on('connection', function (socket) {
 		});
     });
 
-    
+    var BTDevices = [];
 
     socket.on('search_Bluetooth', function(data){
     	if (data == "new") {
@@ -85,6 +83,7 @@ io.sockets.on('connection', function (socket) {
     		BTserial.close();
     		BTserial.inquire();
     	} else {
+            console.log(BTDevices);
     		for (var i = 0; i < BTDevices.length; i++) {
     			socket.emit('device',{address: TDevices[i].address, name: TDevices[i].name, channel: TDevices[i].channel});
     		}
@@ -92,7 +91,7 @@ io.sockets.on('connection', function (socket) {
     	
     });
 
-    var BTDevices = [];
+    
 
     BTserial.on('found', function(address, name) {
     	BTserial.findSerialPortChannel(address, function(channel) {
@@ -145,19 +144,21 @@ io.sockets.on('connection', function (socket) {
             		console.log(err);
             		socket.emit('error',{message: "fail to write to robot"});
             	};
-            	console.log("BytesWritten : "+bytesWritten)
             });
     	} else {
     		socket.emit('console','no bluetooth connection');
     	}
     });
 
+    socket.on('stopPaint', function(data){
+        paintPosition = painterPositions.length;
+    })
+
     var paintPosition;
     var lastPostion;
 
     var paint = function(){
-    	if(paintPosition !== painterPositions.length) {
-    		console.log(painterPositions[paintPosition].p+','+painterPositions[paintPosition].s+','+painterPositions[paintPosition].l+',1\n');
+    	if(paintPosition < painterPositions.length) {
     		if (lastPostion !== paintPosition) {
     			lastPostion = paintPosition;
 	    		BTserial.write(new Buffer(painterPositions[paintPosition].p+','+painterPositions[paintPosition].s+','+painterPositions[paintPosition].l+',1\n', 'utf8'), function (err, bytesWritten){
@@ -166,7 +167,12 @@ io.sockets.on('connection', function (socket) {
 	            		socket.emit('error',{message: "fail to write to robot"});
 	            	};
 	            	paintPosition++;
-	            	socket.emit('paint',{progress: (painterPositions.length/paintPosition)*100});
+	            	socket.emit('paint',{
+                        progress: Math.round(((painterPositions.length-paintPosition)/painterPositions.length)*100),
+                        x : painterPositions[paintPosition].x,
+                        y : painterPositions[paintPosition].y,
+                        l : painterPositions[paintPosition].l
+                    });
 	            });
     		}
     	} else {
@@ -190,9 +196,8 @@ io.sockets.on('connection', function (socket) {
     };
 
     var getFromRobot = function(data){
-    	console.log('recieved from Robot '+ data);
     	if (data == "h"){
-    		startPaint()
+    		startPaint();
     	} else if (data == "p") {
     		paint();
     	} else if (data == "e") {

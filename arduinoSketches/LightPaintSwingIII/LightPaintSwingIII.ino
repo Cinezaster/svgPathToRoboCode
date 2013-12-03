@@ -1,20 +1,21 @@
 #include <AccelStepper.h>
-AccelStepper stepper1(AccelStepper::DRIVER, 8, 9);
-AccelStepper stepper2(AccelStepper::DRIVER, 10, 11);
+AccelStepper stepper1(AccelStepper::DRIVER, 5, 6);
+AccelStepper stepper2(AccelStepper::DRIVER, 9, 10);
 
 int led = 13;
-int PlotterMaxSpeedX =120;
-int PlotterMaxSpeedY =120;
-int enablepin;
+int PlotterMaxSpeedX =250;
+int PlotterMaxSpeedY =250;
+
 int oldP, oldS;
 
 void setup() {
   Serial1.begin(9600);
   pinMode(led, OUTPUT);
   digitalWrite(led, LOW);
-  pinMode(enablepin, OUTPUT);
-  digitalWrite(enablepin, LOW);
-  Serial1.println("Start");
+  stepper1.setEnablePin(7);
+  stepper2.setEnablePin(11);
+  stepper1.disableOutputs();
+  stepper2.disableOutputs();
 }
 
 void loop() {
@@ -31,23 +32,26 @@ void loop() {
 
     // look for the newline. That's the end of your sentence:
     if (Serial1.read() == '\n') {
-      
-      if (p != oldP && s != oldS){ //test if is same as previous
-        oldP = p;
-        oldS = s;
         if (t == 2){
           // end fase set enable pin on low
-          Serial1.print("p");
+          Serial1.println("e");
+          stepper1.setCurrentPosition(0);
+          stepper2.setCurrentPosition(0);
+          stepper1.disableOutputs();
+          stepper2.disableOutputs();
         } else if( t == 0){
           Home();
         } else if(t == 1) {
-          Serial1.print("p");
-          Move(p, s);
-          if(l == 1){
-            digitalWrite(led, HIGH);
-          } else {
-            digitalWrite(led, LOW);
-          }
+          if (p != oldP || s != oldS){ //test if is same as previous
+            oldP = p;
+            oldS = s;
+            Serial1.println("p");
+            Move(p, s);
+            if(l == 1){
+              digitalWrite(led, HIGH);
+            } else {
+              digitalWrite(led, LOW);
+            }
         }
       }
     }
@@ -111,6 +115,8 @@ void Move(int positionX,int positionY){
 }
 
 void Home(){
-  Serial1.print("h");
+  Serial1.println("h");
+  stepper1.enableOutputs();
+  stepper2.enableOutputs();
 }
   
