@@ -2,9 +2,10 @@
 AccelStepper stepper1(AccelStepper::DRIVER, 5, 6);
 AccelStepper stepper2(AccelStepper::DRIVER, 9, 10);
 
-int led = 13;
-int PlotterMaxSpeedX =250;
-int PlotterMaxSpeedY =250;
+int led = 4;
+int optoI1 = 12;
+int optoI2 = 8;
+int PlotterMaxSpeed =250;
 
 int oldP, oldS;
 
@@ -12,6 +13,10 @@ void setup() {
   Serial1.begin(9600);
   pinMode(led, OUTPUT);
   digitalWrite(led, LOW);
+  
+  pinMode(optoI1, INPUT);
+  pinMode(optoI2, INPUT);
+  
   stepper1.setEnablePin(7);
   stepper2.setEnablePin(11);
   stepper1.disableOutputs();
@@ -33,12 +38,7 @@ void loop() {
     // look for the newline. That's the end of your sentence:
     if (Serial1.read() == '\n') {
         if (t == 2){
-          // end fase set enable pin on low
-          Serial1.println("e");
-          stepper1.setCurrentPosition(0);
-          stepper2.setCurrentPosition(0);
-          stepper1.disableOutputs();
-          stepper2.disableOutputs();
+          End();
         } else if( t == 0){
           Home();
         } else if(t == 1) {
@@ -77,27 +77,21 @@ void Move(int positionX,int positionY){
     coefX=dy/dx;
   } 
   else coefX=1;
-  //if X longer distance than minimize max speed for Y
-  stepper1.setMaxSpeed(PlotterMaxSpeedX/coefX);
-  //stepper1.setAcceleration(PlotterMaxSpeedX/coefX);
-  stepper2.setMaxSpeed(PlotterMaxSpeedY/coefY);
-  //stepper2.setAcceleration(PlotterMaxSpeedY/coefY);
+  stepper1.setMaxSpeed(PlotterMaxSpeed/coefX);
+  stepper2.setMaxSpeed(PlotterMaxSpeed/coefY);
   
   if (stepper1.distanceToGo() > 0) {
-    //Serial.println(PlotterMaxSpeedX/coefX);
-    stepper1.setSpeed(PlotterMaxSpeedX/coefX);
+    stepper1.setSpeed(PlotterMaxSpeed/coefX);
   } else {
-    //Serial.println(-PlotterMaxSpeedX/coefX);
-    stepper1.setSpeed(-PlotterMaxSpeedX/coefX);
+    stepper1.setSpeed(-PlotterMaxSpeed/coefX);
   }
   
   if (stepper2.distanceToGo() > 0) {
-    //Serial.println(PlotterMaxSpeedY/coefY);
-    stepper2.setSpeed(PlotterMaxSpeedY/coefY);
+    stepper2.setSpeed(PlotterMaxSpeed/coefY);
   } else {
-    //Serial.println(-PlotterMaxSpeedY/coefY);
-    stepper2.setSpeed(-PlotterMaxSpeedY/coefY);
+    stepper2.setSpeed(-PlotterMaxSpeed/coefY);
   }
+  
   int x = 0;
   int y = 0;
   while (x < 1 && y < 1){
@@ -115,8 +109,25 @@ void Move(int positionX,int positionY){
 }
 
 void Home(){
-  Serial1.println("h");
   stepper1.enableOutputs();
   stepper2.enableOutputs();
+  stepper1.setSpeed(80);
+  while(digitalRead(optoI1) == 1){ // beam blocked == 1
+    stepper1.runSpeed();
+  }
+  stepper2.setSpeed(80);
+  while(digitalRead(optoI2) == 1){ // beam blocked == 1
+    stepper2.runSpeed();
+  }
+  Serial1.println("h");
 }
-  
+
+void End(){
+  // end fase set enable pin on low
+  Serial1.println("e");
+  stepper1.setCurrentPosition(0);
+  stepper2.setCurrentPosition(0);
+  stepper1.disableOutputs();
+  stepper2.disableOutputs();
+  digitalWrite(led, LOW);
+}
