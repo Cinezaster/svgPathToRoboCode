@@ -15,9 +15,6 @@ app.use(express.static(__dirname + '/public'));
 app.use('/uploads',express.static(__dirname + '/public'));
 
 io.sockets.on('connection', function (socket) {
-
-
-
 	 // Make an instance of SocketIOFileUploadServer and listen on this socket:
     var uploader = new SocketIOFileUploadServer();
     uploader.dir = __dirname +"/public/upload";
@@ -46,6 +43,7 @@ io.sockets.on('connection', function (socket) {
 	  			stepData += data
 			});
 			ls.stdout.on('end', function () {
+                console.log(stepData);
 	  			try {
       			    var data = JSON.parse(stepData);
       				if (data.painterPositions !== undefined){
@@ -72,6 +70,19 @@ io.sockets.on('connection', function (socket) {
     	fs.readdir(__dirname +"/public/upload", function(err,files){
 			socket.emit('giveFiles',files);
 		});
+    });
+
+    socket.on('svg', function(data){
+        fs.writeFile(__dirname+"/public/upload/"+ data.name+".svg", data.svg, function(err) {
+            if(err) {
+                console.log(err);
+            } else {
+                console.log(data.name+".svg has been saved");
+                fs.readdir(__dirname +"/public/upload", function(err,files){
+                    socket.broadcast.emit('giveFiles',files);
+                });
+            }
+        });
     });
 
     var BTDevices = [];
@@ -192,7 +203,7 @@ io.sockets.on('connection', function (socket) {
     };
 
     var endPaint = function(){
-    	socket.emit('console','end of painting')
+    	socket.emit('paintEnd','')
     };
 
     var getFromRobot = function(data){

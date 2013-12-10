@@ -152,6 +152,9 @@
 				$('#image').html('<image src="/upload/'+fileName+'">');
 				$('.process').attr('data-image',fileName);
 				$('.svg-image-name').html('"'+fileName+'"');
+				$('#processing').html('');
+				processingInstance = 0;
+				delete processingInstance
 			}
 
 			socket.on('saved_image', function(data){
@@ -161,7 +164,7 @@
 				},2000);
 					
 			});
-var processingInstance;
+			var processingInstance;
 
 			socket.on('processed', function(data){				
 				var $projDiv = $('#processing');
@@ -169,8 +172,6 @@ var processingInstance;
 				var p = Processing.loadSketchFromSources('project_canvas', ['/processing/processing.pde']);
 				$projDiv.html(canvasRef);
 				$('.svg-processing-name').html('"'+data+'"');
-				processingInstance = Processing.getInstanceById('project_canvas');
-
 			});
 
 			socket.on('console', function(data){				
@@ -215,6 +216,11 @@ var processingInstance;
 				processingInstance.position(data.x,data.y,data.l); 
 			})
 
+			socket.on('paintEnd', function(data){
+				$('.bar').css('width',"0%");
+
+			})
+
 			$('.process').click(function(e){
 				socket.emit('process', $(e.currentTarget).attr('data-image') );
 			});
@@ -230,6 +236,8 @@ var processingInstance;
 
 			$('.paint').click(function(){
 				socket.emit('paint' ,{});
+				processingInstance = Processing.getInstanceById('project_canvas');
+
 			})
 			$('.stopPaint').click(function(){
 				socket.emit('stopPaint',{});

@@ -1,0 +1,109 @@
+<!Doctype htlm>
+<html>
+	<head>
+		<title>svg to robot control panel</title>
+		<link type="text/css" href="/libero/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+		<link type="text/css" href="/libero/css/theme.css" rel="stylesheet">
+		<link type="text/css" href="/libero/icons/font-awesome/css/font-awesome.css" rel="stylesheet">
+
+		<link type="text/css" href="http://fonts.googleapis.com/css?family=Roboto:400,400italic,700,700italic,500italic,500,300italic,300" rel="stylesheet">
+		<link type="text/css" href="http://fonts.googleapis.com/css?family=Fugaz+One|Leckerli+One" rel="stylesheet">
+
+		<style type="text/css">
+			.consoleLook {
+				background-color: #000 !important;
+				color: #00FF00;
+				font-family: 'Droid Sans Mono',courier !important;
+				font-style: normal;
+				font-weight: 400;
+			}
+			svg circle{
+				fill: red;
+			}
+		</style>
+
+		<script src="/socket.io/socket.io.js"></script>
+		<script src="/bower_components/jquery/jquery.js"></script>
+		<script src="/libero/js/jquery-ui-1.10.1.custom.min.js"></script>
+		<script src="/libero/bootstrap/js/bootstrap.min.js"></script>
+		<script type="text/javascript" src="/js/fabric.js"></script>
+	</head>
+	<body>
+		<div class="frame">
+			<div class="sidebar">
+				<div class="wrapper">
+					<a href="p#" class="profile">Controls</a>
+					<ul class="nav nav-list">
+						<li class="nav-header"><i class="icon-tasks"></i> Painting</li>
+						<li><a href="#" id="save"><i class="icon-upload"></i>Save</a></li>
+						<li><a href="#"  class="clear"><i class="icon-cogs"></i> Clear</a></li>
+					</ul>
+				</div>
+			</div>
+			<div class="content">
+				<div class="navbar navbar-static-tops">
+					<div class="navbar-inner">		
+						<a href="javascript:void(0);" class="btn pull-left toggle-sidebar hidden-desktop"><i class="icon-reorder"></i></a>
+							<a class="brand" href="index.html">LightSwingRobot</a>
+					</div>
+				</div>
+				<div class="content-body">
+					<section class="row-fluid">
+						<div class="span5">
+							<section class="module">
+								<div class="module-head">
+									<b>Canvas</b>
+								</div><!--/.module-head-->
+								<div class="module-body" style="background-color: grey;">
+									<canvas id="paint" width="400" height="400"></canvas>
+								</div><!--/.module-body-->
+							</section>
+						</div>
+					</section>
+				</div>
+			</div>
+		</div>
+
+		<script type="text/javascript">	
+  			var socket = io.connect('http://localhost');
+  			var canvas;
+
+  			function prepare(){
+  				canvas.add(
+  					new fabric.Circle({
+  						top: 0, 
+  						left: 0, 
+  						radius: 200, 
+  						fill: 'white', 
+  						borderColor: "black"
+
+  					})
+  				);
+  			};
+  			(function() {
+  				canvas = this.__canvas = new fabric.Canvas('paint', {
+    				isDrawingMode: true,
+    				backgroundColor: "grey"
+  				});
+  				prepare();
+
+
+  				fabric.Object.prototype.transparentCorners = false;
+
+  				$('.clear').on('click', function(){
+  					canvas.clear();
+  					prepare();
+  				});
+  				$('#save').on('click', function(){
+  					var svgCode = canvas.toSVG();
+  					console.log(svgCode);
+  					var name = prompt('Name for svg:');
+  					socket.emit('svg',{name: name.toLowerCase().replace(' ','_'), svg: svgCode});
+  					canvas.clear();
+  					prepare();
+  				});
+  			})();
+  			
+		</script>
+	</body>
+</html>

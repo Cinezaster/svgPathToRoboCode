@@ -8,11 +8,14 @@ if (process.argv.length < 4) {
 	  process.exit(1);
 	}
 }
-
-Array.prototype.toFloat = function() {
+Array.prototype.removeEmpty = function () {
 	if (this[0] == ''){
 		this.splice(0, 1);
 	}
+	return this;
+}
+
+Array.prototype.toFloat = function() {
   	for (i=0;i<this.length;i++) {
   		this[i]=parseFloat(this[i]);
   	}
@@ -21,6 +24,18 @@ Array.prototype.toFloat = function() {
 
 Array.prototype.insert = function(index, item) {
 	  this.splice(index, 0, item);
+}
+
+function generateGuid() {
+  var result, i, j;
+  result = '';
+  for(j=0; j<32; j++) {
+    if( j == 8 || j == 12|| j == 16|| j == 20) 
+      result = result + '-';
+    i = Math.floor(Math.random()*16).toString(16).toUpperCase();
+    result = result + i;
+  }
+  return result;
 }
 
 var fs = require('fs'),
@@ -36,45 +51,123 @@ var fs = require('fs'),
 	paths = new Array(), 
 	allPaths = new Array(), 
 	svgData,
+	svgObject = {g:{},data:{}},
+	guid,
 	totalLength = 0,
 	resolution = 3,
+	transform =  new Array(),
 	processing = "void setup() {\r\nsize(400, 400);\r\nnoLoop();\r\n}\r\n \r\n void position(x,y,l) {\r\n if(l == 0) {\r\nstroke(#FFCC00);\r\n} else {\r\nstroke(#00CCFF);\r\n}\r\n ellipse(x,y,1,1)}\r\n void draw() {\r\n background(255);\r\nnoFill()\;\r\n";
 
 
+
+
 xml.collect('path');
+
 xml.on('endElement: path', function(item) {
+	if(item.$.transform){
+		var regExp = /\(([^)]+)\)/;
+		var transform = regExp.exec(item.$.transform)[1].split(' ')
+		console.log("transform: "+ transform);
+		console.log("g transform: "+ svgObject.g[guid].transform);
+		svgObject.g[guid].transform[0] = parseFloat(svgObject.g[guid].transform[0]) + parseFloat(transform[0]);
+		svgObject.g[guid].transform[1] = parseFloat(svgObject.g[guid].transform[1]) + parseFloat(transform[1]);
+		console.log("new transform: "+ svgObject.g[guid].transform);
+	}
 	var pathData = item.$.d
 	var pathSegmentPattern = /[a-z][^a-z]*/ig;
 	// split on every letter
 	var pathSegments = pathData.match(pathSegmentPattern);
 	// add to an array with all the paths (l,L,h,H,v,V,s,S,c,C,M)
-  	paths.push(pathSegments); 	
+  	paths.push(pathSegments);
+
+  	var pathGuid = generateGuid();
+  	svgObject.g[guid].path[pathGuid] = pathSegments;
+});
+
+xml.on('startElement: g', function(item){
+	guid = generateGuid();
+	svgObject.g[guid] = [];
+	svgObject.g[guid].path = [];
+	if(item.$.transform){
+		var regExp = /\(([^)]+)\)/;
+		svgObject.g[guid].transform = regExp.exec(item.$.transform)[1].split(' ')
+	}else{
+		svgObject.g[guid].transform = [0,0];
+	}
+
 });
 
 xml.on('endElement: svg', function(item) {
 	//svgData  stores all svg data.
 	svgData = item.$	
+	svgObject.data = svgData;
 });
 xml.on('end', function(){
 	// start processing the data
 
-	// add a start point in the middle of the svg
-	paths.unshift(['O'+svgData.width.slice(0,-2)/2+','+svgData.height.slice(0, -2)/2]);
-	
-	// fill allPaths array with an object of all the paths
-	for (var i = 0; i < paths.length; i++) {
-		for (var j = 0; j < paths[i].length; j++) {
-			
-			var numbers = paths[i][j].substr(1).replace(/-/gi, ',-');
-			var arrayOfNumbers = numbers.split(",");
-			allPaths.push({
-				type: paths[i][j].slice(0, 1),
-				points : arrayOfNumbers.toFloat(),
-				paint : true
-			});
-		}
-	};
+	if (svgObject.data.version == 1.2){
+		allPaths = [{
+			type: "O",
+			points: [svgObject.data.width.slice(0,-2)/2, svgObject.data.height.slice(0,-2)/2],
+			paint: false
+		}];
+	} else if (svgObject.data.version == 1.1) {
+		allPaths = [{
+			type: "O",
+			points: [svgObject.data.width/2, svgObject.data.height/2],
+			paint: false
+		}];
+	}
 
+
+	for (var key in svgObject.g) {
+   		if (svgObject.g.hasOwnProperty(key)) {
+      		var obj = svgObject.g[key];
+      		var transform = obj.transform.toFloat();
+      		for (var uid in obj.path) {
+         		if (obj.path.hasOwnProperty(uid)) {
+         			var path = obj.path[uid]
+         			for (var i = 0; i < path.length; i++) {
+         				if (svgObject.data.version == 1.1) {
+         					var numbers = path[i].substr(1).replace(/^\s\s*/, '').replace(/\s\s*$/, '').split(/ +/).removeEmpty().toFloat();
+         					if ( path[i].slice(0, 1) == path[i].slice(0, 1).toUpperCase()){
+         						for (var j = 0; j < numbers.length; j++) {
+	         						if (j%2 !== 0){
+	         							numbers[j] = numbers[j]+transform[1];
+	         						} else {
+	         							numbers[j] = numbers[j]+transform[0];
+	         						}
+	         					};
+         					}
+							allPaths.push({
+								type: path[i].slice(0, 1),
+								points : numbers.toFloat(),
+								paint : true
+							});
+         				} else if (svgObject.data.version == 1.2) {
+         					var numbers = path[i].substr(1).replace(/-/gi, ',-').split(",").removeEmpty().toFloat();
+         					if ( path[i].slice(0, 1) == path[i].slice(0, 1).toUpperCase()){
+								for (var j = 0; j < numbers.length; j++) {
+	         						if (j%2 !== 0){
+	         							numbers[j] = numbers[j]+transform[0];
+	         						} else {
+	         							numbers[j] = numbers[j]+transform[1];
+	         						}
+	         					};
+         					}
+							allPaths.push({
+								type: path[i].slice(0, 1),
+								points : numbers.toFloat(),
+								paint : true
+							});
+			         	}
+         			};
+         		}
+      		}
+   		}
+	}
+
+	//remove z
 	for (var i = allPaths.length - 1; i >= 0; i--) {
 		var p = allPaths[i].points;
 		if (allPaths[i].type === "z") {
@@ -140,7 +233,15 @@ xml.on('end', function(){
 						absolutePointsArray[j+2] = allPaths[i].points[j]
 					}
 			    }
-		} 
+		} else if(allPaths[i].type == "Q") {
+			allPaths[i].type = "C";
+			absolutePointsArray[2] = allPaths[i].points[0];
+			absolutePointsArray[3] = allPaths[i].points[1];
+			absolutePointsArray[4] = allPaths[i].points[0];
+			absolutePointsArray[5] = allPaths[i].points[1];
+			absolutePointsArray[6] = allPaths[i].points[2];
+			absolutePointsArray[7] = allPaths[i].points[3];
+		}
 
 		
 		if(allPaths[i].type !== "M") {
