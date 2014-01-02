@@ -1,3 +1,14 @@
+/* 
+  pin 3 is bluetooth indication
+  pin 4 is paint led --> to attiny
+  pin 5, 6, 7 is stepper1 (boom 1)
+  pin 8 optical sensor boom 1
+  pin 9, 10 , 11 is stepper2 (boom 2)
+  apin 12 optical sensor boom 2
+  pin A0 shutter trigger
+  pin A1 flash trigger
+*/
+
 #include <AccelStepper.h>
 AccelStepper stepper1(AccelStepper::DRIVER, 5, 6);
 AccelStepper stepper2(AccelStepper::DRIVER, 9, 10);
@@ -5,6 +16,8 @@ AccelStepper stepper2(AccelStepper::DRIVER, 9, 10);
 int led = 4;
 int optoI1 = 12;
 int optoI2 = 8;
+int shutter = A0;
+int flash = A1;
 int PlotterMaxSpeed =250;
 
 int oldP, oldS;
@@ -12,7 +25,13 @@ int oldP, oldS;
 void setup() {
   Serial1.begin(9600);
   pinMode(led, OUTPUT);
+  pinMode(shutter, OUTPUT);
+  pinMode(flash, OUTPUT);
+  
   digitalWrite(led, LOW);
+  
+  digitalWrite(shutter, LOW);
+  digitalWrite(flash, LOW);
   
   pinMode(optoI1, INPUT);
   pinMode(optoI2, INPUT);
@@ -111,19 +130,28 @@ void Move(int positionX,int positionY){
 void Home(){
   stepper1.enableOutputs();
   stepper2.enableOutputs();
-  stepper1.setSpeed(80);
+  stepper1.setSpeed(200);
   while(digitalRead(optoI1) == 1){ // beam blocked == 1
     stepper1.runSpeed();
   }
-  stepper2.setSpeed(80);
+  stepper1.setCurrentPosition(0);
+  stepper2.setSpeed(200);
   while(digitalRead(optoI2) == 1){ // beam blocked == 1
     stepper2.runSpeed();
   }
+  stepper2.setCurrentPosition(0);
   Serial1.println("h");
+  
+  digitalWrite(shutter, HIGH);
+  delay(200);
+  digitalWrite(flash, HIGH);
+  delay(50);
+  digitalWrite(flash, LOW);
 }
 
 void End(){
   // end fase set enable pin on low
+  digitalWrite(shutter, LOW);
   Serial1.println("e");
   stepper1.setCurrentPosition(0);
   stepper2.setCurrentPosition(0);

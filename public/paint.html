@@ -10,15 +10,17 @@
 		<link type="text/css" href="http://fonts.googleapis.com/css?family=Fugaz+One|Leckerli+One" rel="stylesheet">
 
 		<style type="text/css">
-			.consoleLook {
-				background-color: #000 !important;
-				color: #00FF00;
-				font-family: 'Droid Sans Mono',courier !important;
-				font-style: normal;
-				font-weight: 400;
+			.content{
+				margin-left: 0;
 			}
-			svg circle{
-				fill: red;
+			.module-body{
+				text-align: center;
+			}
+			.canvas-container{
+				margin: 0 auto;
+			}
+			p{
+				color: white;
 			}
 		</style>
 
@@ -29,43 +31,57 @@
 		<script type="text/javascript" src="/js/fabric.js"></script>
 	</head>
 	<body>
-		<div class="frame">
-			<div class="sidebar">
-				<div class="wrapper">
-					<a href="p#" class="profile">Controls</a>
-					<ul class="nav nav-list">
-						<li class="nav-header"><i class="icon-tasks"></i> Painting</li>
-						<li><a href="#" id="save"><i class="icon-upload"></i>Save</a></li>
-						<li><a href="#"  class="clear"><i class="icon-cogs"></i> Clear</a></li>
-					</ul>
+		<div class="content">
+			<div class="navbar navbar-static-tops">
+				<div class="navbar-inner">		
+					<a href="javascript:void(0);" class="btn pull-left toggle-sidebar hidden-desktop"><i class="icon-reorder"></i></a>
+						<a class="brand" href="index.html">LightSwingRobot</a> 
 				</div>
 			</div>
-			<div class="content">
-				<div class="navbar navbar-static-tops">
-					<div class="navbar-inner">		
-						<a href="javascript:void(0);" class="btn pull-left toggle-sidebar hidden-desktop"><i class="icon-reorder"></i></a>
-							<a class="brand" href="index.html">LightSwingRobot</a>
+			<div class="content-body">
+				<section class="row-fluid">
+					<div class="span12">
+						</ul>
+						<section class="module">
+					<div class="btn-group"><a href="#" id="save" class="btn"><i class="icon-upload"></i>Save</a><a href="#"  class="clear btn"><i class="icon-cogs"></i> Clear</a></div>
+							<div class="module-body" style="background-color: grey;">
+								<p>Teken in het witte vierkant. Als je klaar bent klik op de knop "Save"</p>
+								<canvas id="paint" width="400" height="400"></canvas>
+							</div>
+						</section>
 					</div>
-				</div>
-				<div class="content-body">
-					<section class="row-fluid">
-						<div class="span5">
-							<section class="module">
-								<div class="module-head">
-									<b>Canvas</b>
-								</div><!--/.module-head-->
-								<div class="module-body" style="background-color: grey;">
-									<canvas id="paint" width="400" height="400"></canvas>
-								</div><!--/.module-body-->
-							</section>
-						</div>
-					</section>
-				</div>
+				</section>
 			</div>
+			<div id="myModal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+							<div class="modal-header">
+								<button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+								<h3 id="myModalLabel">Save</h3>
+							</div>
+							<div class="modal-body">
+								<form class="form-horizontal">
+									<div class="control-group"> 
+										<label class="control-label" for="naamTekening">Naam tekening: </label>
+										<div class="controls">
+											<input type="text" id="naamTekening">
+										</div>
+									</div>
+									<div class="control-group"> 
+										<label class="control-label" for="email">Email adres: </label>
+										<div class="controls">
+											<input type="email" id="email">
+										</div>
+									</div>
+								</form>
+							</div>
+							<div class="modal-footer">
+								<button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
+								<button class="btn btn-primary" id="submit">Save changes</button>
+							</div>
+						</div>
 		</div>
 
 		<script type="text/javascript">	
-  			var socket = io.connect('http://localhost');
+  			var socket = io.connect(location.origin);
   			var canvas;
 
   			function prepare(){
@@ -95,13 +111,29 @@
   					prepare();
   				});
   				$('#save').on('click', function(){
-  					var svgCode = canvas.toSVG();
-  					console.log(svgCode);
-  					var name = prompt('Name for svg:');
+  					$('#myModal').modal('show');
+  					$('input').val('');
+  				});
+
+  				$('#submit').on('click',function(){
+
+  					var name = $('#naamTekening').val();
+  					var email = $('#email').val();
+  					$('#myModal').modal('hide');
+  					canvas.add(
+  						new fabric.Text(email, {
+  							fill: 'white',
+  							top: 200,
+  							left: 10,
+  							fontSize: 5
+						})
+  					);
+  					var svgCode = canvas.toSVG();				
   					socket.emit('svg',{name: name.toLowerCase().replace(' ','_'), svg: svgCode});
   					canvas.clear();
   					prepare();
-  				});
+  				})
+
   			})();
   			
 		</script>

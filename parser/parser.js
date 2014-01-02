@@ -54,7 +54,7 @@ var fs = require('fs'),
 	svgObject = {g:{},data:{}},
 	guid,
 	totalLength = 0,
-	resolution = 3,
+	resolution = 6,
 	transform =  new Array(),
 	processing = "void setup() {\r\nsize(400, 400);\r\nnoLoop();\r\n}\r\n \r\n void position(x,y,l) {\r\n if(l == 0) {\r\nstroke(#FFCC00);\r\n} else {\r\nstroke(#00CCFF);\r\n}\r\n ellipse(x,y,1,1)}\r\n void draw() {\r\n background(255);\r\nnoFill()\;\r\n";
 
@@ -67,11 +67,8 @@ xml.on('endElement: path', function(item) {
 	if(item.$.transform){
 		var regExp = /\(([^)]+)\)/;
 		var transform = regExp.exec(item.$.transform)[1].split(' ')
-		console.log("transform: "+ transform);
-		console.log("g transform: "+ svgObject.g[guid].transform);
 		svgObject.g[guid].transform[0] = parseFloat(svgObject.g[guid].transform[0]) + parseFloat(transform[0]);
 		svgObject.g[guid].transform[1] = parseFloat(svgObject.g[guid].transform[1]) + parseFloat(transform[1]);
-		console.log("new transform: "+ svgObject.g[guid].transform);
 	}
 	var pathData = item.$.d
 	var pathSegmentPattern = /[a-z][^a-z]*/ig;
@@ -285,8 +282,6 @@ xml.on('end', function(){
 			var prevDirX = prevX - prevLineX;
 			var prevDirY = prevY - prevLineY;
 
-			// TODO check minimum lenght on both directions, specially if previous or next was a L
-
 			var points = [
 				prevX, 
 				prevY, 
@@ -381,14 +376,17 @@ xml.on('end', function(){
 				var dirX = allPaths[i+1].points[4];
 				var dirY = allPaths[i+1].points[5];
 			}
+			if (fixedX === dirX && fixedY === dirY && allPaths[i+1].type === "C") {
+				var dirX = allPaths[i+1].points[6];
+				var dirY = allPaths[i+1].points[7];
+			}
 			return (fixedX - dirX)/(fixedY - dirY);
 		}();
-
 		if (slope !== nextSlope ) {
-			
 			var testX = allPaths[i].points[allPaths[i].points.length-2];
-			var testY = allPaths[i].points[allPaths[i].points.length-1];			
-			if (slope - nextSlope > 2 || slope - nextSlope < -2 ) { // 18 is a good value
+			var testY = allPaths[i].points[allPaths[i].points.length-1];
+			if (slope - nextSlope > 0.5 || slope - nextSlope < -0.5 ) { // 18 is a good value
+
 				if (Math.abs(slope) !== Math.abs(nextSlope)) {
 						var fixedX = allPaths[i].points[allPaths[i].points.length-2];
 						var fixedY = allPaths[i].points[allPaths[i].points.length-1];
@@ -402,9 +400,9 @@ xml.on('end', function(){
 						var opositeY = fixedY +(fixedY - dirY);
 						var length = Math.sqrt(Math.pow((fixedX-opositeX),2)+Math.pow((fixedY-opositeY),2));
 						
-						if (length < 20 ) {
-							opositeX = fixedX +4*(fixedX - dirX);
-							opositeY = fixedY +4*(fixedY - dirY);
+						if (length < 10 ) {
+							opositeX = fixedX +8*(fixedX - dirX);
+							opositeY = fixedY +8*(fixedY - dirY);
 						} else if (length > 80) {
 							opositeX = fixedX +(fixedX - dirX)/2;
 							opositeY = fixedY +(fixedY - dirY)/2;
@@ -431,8 +429,6 @@ xml.on('end', function(){
 							opositeY2 = fixedY2 +(fixedY2 - dirY2)/2;
 						}
 						
-						//TODO check if the oposite value fall out of the drawing box
-
 						allPaths.insert(i+1,{
 							type: "C",
 							points : [
@@ -448,9 +444,7 @@ xml.on('end', function(){
 							paint: false
 						});
 						i++
-					//console.log(slope- nextSlope);
-
-					};
+				}
 				
 			};
 			
@@ -583,7 +577,7 @@ xml.on('end', function(){
 		for (var i = 0; i < arduinoAngles.length; i++) {
 			var stepsObject = {
 				p : Math.round(arduinoAngles[i][0]*stepsPerDegree),
-				s : Math.round(-arduinoAngles[i][1]*stepsPerDegree),
+				s : Math.round(arduinoAngles[i][1]*stepsPerDegree),
 				l : arduinoAngles[i][2],
 				x : Math.round(xyPoints[i].x),
 				y : Math.round(xyPoints[i].y)

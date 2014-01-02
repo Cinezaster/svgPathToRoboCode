@@ -6,13 +6,16 @@ var express = require('express')
   , BTSP = require('bluetooth-serial-port')
   , BTserial = new BTSP.BluetoothSerialPort()
   , fs = require('fs')
-  , painterPositions =[];
+  , painterPositions =[]
+  , colors = require('colors');
 
 server.listen(3000);
 
 app.use(SocketIOFileUploadServer.router);
 app.use(express.static(__dirname + '/public'));
 app.use('/uploads',express.static(__dirname + '/public'));
+
+io.set('log level', 1); 
 
 io.sockets.on('connection', function (socket) {
 	 // Make an instance of SocketIOFileUploadServer and listen on this socket:
@@ -85,10 +88,14 @@ io.sockets.on('connection', function (socket) {
         });
     });
 
-    var BTDevices = [];
+    var BTDevices = [{
+        address: "00-11-08-04-00-43",
+        name: "linvor",
+        channel: 1
+    }];
 
     socket.on('search_Bluetooth', function(data){
-    	if (data == "new") {
+    	if (data === "newd") {
     		socket.emit('console','start searching for bluetooth device');
     		console.log('start searching for bluetooth devices:');
     		BTserial.close();
@@ -96,7 +103,7 @@ io.sockets.on('connection', function (socket) {
     	} else {
             console.log(BTDevices);
     		for (var i = 0; i < BTDevices.length; i++) {
-    			socket.emit('device',{address: TDevices[i].address, name: TDevices[i].name, channel: TDevices[i].channel});
+    			socket.emit('device',{address: BTDevices[i].address, name: BTDevices[i].name, channel: BTDevices[i].channel});
     		}
     	}
     	
@@ -134,6 +141,16 @@ io.sockets.on('connection', function (socket) {
 			socket.emit('console','Bluetooth connected with '+ address);
 			console.log('Bluetooth connected with '+ address);
 			socket.emit('connected_Bluetooth',{address:address});
+
+            var dataBuffer = "";
+            BTserial.on('data', function(buffer) {
+                console.log('data'.yellow);
+                dataBuffer = dataBuffer + buffer.toString('utf8');
+                if(dataBuffer.indexOf("\n") != -1 ){
+                    getFromRobot(dataBuffer.slice(0,1));
+                    dataBuffer = "";
+                }
+             });
 		},function (){
 			socket.emit('console','Cannot connect');
 			console.log('Cannot connect');
@@ -151,6 +168,7 @@ io.sockets.on('connection', function (socket) {
     	if (BTserial.isOpen()) {
     		console.log('paint');
     		BTserial.write(new Buffer('0,0,0,0\n', 'utf8'), function (err, bytesWritten){
+                console.log('start bytes: ', bytesWritten);
             	if (err) {
             		console.log(err);
             		socket.emit('error',{message: "fail to write to robot"});
@@ -167,13 +185,16 @@ io.sockets.on('connection', function (socket) {
 
     var paintPosition;
     var lastPostion;
+    var flagPosition;
 
     var paint = function(){
     	if(paintPosition < painterPositions.length) {
-    		if (lastPostion !== paintPosition) {
+    		if (lastPostion !== paintPosition && flagPosition  !== paintPosition) {
     			lastPostion = paintPosition;
+                flagPosition = paintPosition;
 	    		BTserial.write(new Buffer(painterPositions[paintPosition].p+','+painterPositions[paintPosition].s+','+painterPositions[paintPosition].l+',1\n', 'utf8'), function (err, bytesWritten){
-	            	if (err) {
+	            	console.log('paint; '.red, paintPosition);
+                    if (err) {
 	            		console.log(err);
 	            		socket.emit('error',{message: "fail to write to robot"});
 	            	};
@@ -197,17 +218,18 @@ io.sockets.on('connection', function (socket) {
     };
 
     var startPaint = function (){
-    	console.log('start Painting')
-    	paintPosition = 0;
-    	paint();
+            console.log('start Painting'.green)
+            paintPosition = 0;
+            paint();
     };
 
     var endPaint = function(){
-    	socket.emit('paintEnd','')
+    	socket.emit('paintEnd','');
     };
 
     var getFromRobot = function(data){
     	if (data == "h"){
+
     		startPaint();
     	} else if (data == "p") {
     		paint();
@@ -215,15 +237,6 @@ io.sockets.on('connection', function (socket) {
     		endPaint();
     	}
     }
-    var dataBuffer = "";
-    BTserial.on('data', function(buffer) {
-    	dataBuffer = dataBuffer + buffer.toString('utf8');
-            if(dataBuffer.indexOf("\n") != -1){
-                getFromRobot(dataBuffer.slice(0,1));
-                dataBuffer = "";
-            }
-        
-	});
-
+    
 });
 

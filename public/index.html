@@ -128,7 +128,7 @@
 		</div>
 
 		<script type="text/javascript">	
-  			var socket = io.connect('http://localhost');
+  			var socket = io.connect(location.origin);
   			socket.on('news', function (data) {
     			console.log(data);
     			socket.emit('file', { my: 'data' });

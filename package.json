@@ -6,6 +6,22 @@
   "dependencies": {
     "express": "3.x",
     "socket.io": "0.9.16",
-    "socketio-file-upload" : "0.2.6" 
+    "socketio-file-upload": "0.2.6",
+    "colors": "0.6.2"
+  },
+  "devDependencies": {
+    "blanket": "~1.1.6",
+    "chai": "~1.8.1",
+    "grunt": "~0.4.2",
+    "grunt-mocha-cov": "~0.1.1",
+    "grunt-contrib-jshint": "~0.8.0",
+    "grunt-contrib-watch": "~0.5.3",
+    "grunt-blanket": "0.0.8"
+  },
+  "config": {
+    "blanket": {
+      "pattern": "parser",
+      "data-cover-never": "node_modules"
+    }
   }
 }
