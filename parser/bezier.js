@@ -59,6 +59,12 @@ function throwErrorIfArgumentIsNotBetweenZeroandOne (value){
             throw new Error("value must be between 0 and 1");
 };
 
+function throwErrorIfStartDistanceIsBiggerThenResolution(startDistance, resolution){
+    if (startDistance > resolution) {
+        throw new Error("startDistance cannot be bigger then the resolution");
+    }
+};
+
 function Bezier(a, b, c, d) {
 
     areObjects([a,b,c,d]);
@@ -73,7 +79,8 @@ function Bezier(a, b, c, d) {
     this.len = 100;
     this.arcLengths = new Array(this.len + 1);
     this.arcLengths[0] = 0;
-    this.arcLength = 0
+    this.arcLength = 0;
+    this.pointsOnLine = [];
     
     var previousX = this.x(0);
     var previousY = this.y(0);
@@ -154,7 +161,23 @@ Bezier.prototype = {
                + 3 * ((1 - t) * (1 - t)) * t * this.b.y
                + 3 * (1 - t) * (t * t) * this.c.y
                + (t * t * t) * this.d.y;
-    }
+    },
+    toPoints: function (startDistance, resolution) {
+        throwErrorIfUndefined(startDistance);
+        throwErrorIfNaN(startDistance);
+        throwErrorIfUndefined(resolution);
+        throwErrorIfNaN(resolution);
+        throwErrorIfStartDistanceIsBiggerThenResolution(startDistance, resolution);
+
+        var t = (1 / (this.arcLength/resolution)) + 1/(this.arcLength/startDistance);
+        while (t < 1) {
+            this.pointsOnLine.push({
+                x : this.x(t),
+                y : this.y(t)
+            })
+            t += 1 / (this.arcLength/resolution);
+        }
+    },
 };
 
 module.exports = Bezier;

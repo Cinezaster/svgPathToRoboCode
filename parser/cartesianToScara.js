@@ -1,10 +1,11 @@
 module.exports = function (xyPosition){
 		var xy = xyPosition
 		var error = false;
+		var armLenght = 100;
 		for (var i = 0; i < xy.length; i++) {
-			var cartX = xy[i].x - 200;
-			var cartY = xy[i].y - 200;
-			var armLenght = 100;
+			var cartX = xy[i].x - (2*armLenght);
+			var cartY = xy[i].y - (2*armLenght);
+			
 				// distance between point and swivel point
 			var distB = Math.sqrt(Math.pow(cartX,2)+ Math.pow(cartY,2));
 				// height of the Isosceles Triangl
@@ -20,11 +21,15 @@ module.exports = function (xyPosition){
 			xy[i].step1 = (xy[i].step1 > 360)? xy[i].step1-360 : xy[i].step1;
 
 
-			if (isNaN(xy[i].step0)|| isNaN(xy[i].step1)) {
+			if (isNaN(xy[i].step0) || isNaN(xy[i].step1)) {
+
 				console.log("ERROR: DRAWING is out of reach of the robot arm");
+				// todo project
 				error = true;
 				break;
 			}
 		}
 		return (error)? []:xy
 	}
+
+// set the length of the arms

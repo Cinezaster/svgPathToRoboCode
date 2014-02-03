@@ -88,11 +88,6 @@ describe('Line', function(){
 				microSteps : 1/8
 			});
 			lineObject.convertor.should.be.an('object');
-			lineObject.convertor.config.should.deep.equal({
-				radius: 20,
-				steps : 1.8,
-				microSteps : 1/8
-			})
 			done();
 		})
 		describe('#convertor.convert(xyPoint)',function(){

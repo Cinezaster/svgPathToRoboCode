@@ -83,5 +83,27 @@ describe('bezier', function(){
 			done();
 		})
 	});
+	describe('#bezier.toPoints(startAtDistance, resolution)', function () {
+			bezierObject.toPoints(0,0.2);
+		it('should create an object pointsOnLine', function(done){
+			bezierObject.pointsOnLine.should.be.an('array');
+			done();
+		});
+		it('should contain objects with x and y values as numbers', function (done) {
+			bezierObject.pointsOnLine[0].should.be.an('object');
+			bezierObject.pointsOnLine[0].x.should.be.an('number');
+			bezierObject.pointsOnLine[0].y.should.be.an('number');
+			done();
+		});
+		it('should throw an error in case startAtDistance an resolution are NaN or undefined', function (done){
+			(function(){bezierObject.toPoints('a','b')}).should.throw(Error);
+			(function(){bezierObject.toPoints()}).should.throw(Error);
+			done();
+		})
+		it('should throw an error if startAtDistance is bigger then resolution', function(done){
+			(function(){bezierObject.toPoints(0.2,0.1)}).should.throw(Error);
+			done();
+		})
+	})
 })
 

@@ -1,5 +1,16 @@
 function Scara(config) {
-	this.config = config;
+	// defaults
+	this.config = {
+		radius: 200,
+		steps : 1.8,
+		microSteps : 8,
+		startPosition : 0
+	};
+	for (var configItem in config) {
+		if (config.hasOwnProperty(configItem)) {
+			this.config[configItem]= config[configItem];
+		}
+	}
 }
 
 Scara.prototype = {
@@ -20,14 +31,14 @@ Scara.prototype = {
 		axis2 = axis2 - 270 // set start position
 		axis2 = (axis2 < 0)? axis2 + 360 : axis2;
 		axis2 = (axis2 > 360)? axis2-360 : axis2;
-		var step = this.config.steps/ this.config.microSteps
+		var step = 1/(this.config.steps/ this.config.microSteps)
 		return {
 			x: xyPoint.x,
 			y: xyPoint.y,
 			axis1Degree : axis1,
 			axis2Degree : axis2,
-			axis1StepperPosition : axis1 * step,
-			axis2StepperPosition : axis2 * step
+			axis1StepperPosition : Math.round(axis1 * step),
+			axis2StepperPosition : Math.round(-axis2 * step)
 		}
 	}
 }
