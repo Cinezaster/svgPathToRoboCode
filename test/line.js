@@ -98,7 +98,6 @@ describe('Line', function(){
 		describe('#convertor.convert(xyPoint)',function(){
 			it ('it should return axis1 and axis2 positions', function (done){
 				lineObject.convert();
-				console.log(lineObject);
 				lineObject.pointsOnLine[0].should.have.property('axis1Degree');
 				lineObject.pointsOnLine[0].should.have.property('axis2Degree');
 				done();
