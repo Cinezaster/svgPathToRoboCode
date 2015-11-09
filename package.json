@@ -4,10 +4,12 @@
   "version": "0.0.1",
   "private": true,
   "dependencies": {
+    "bluetooth-serial-port": "^1.2.6",
+    "colors": "0.6.2",
     "express": "3.x",
     "socket.io": "0.9.16",
     "socketio-file-upload": "0.2.6",
-    "colors": "0.6.2"
+    "xml-stream": "^0.4.5"
   },
   "devDependencies": {
     "blanket": "~1.1.6",

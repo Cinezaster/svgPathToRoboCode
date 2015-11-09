@@ -15,9 +15,9 @@ function throwErrorIfArgumentIsNotAnObject(argument, point) {
 
 function haveXY(arrayOfArguments) {
     var i;
-    for (i in arrayOfArguments) {
-       throwErrorIfArgumentDoesntHaveXY(arrayOfArguments[i], i); 
-    }
+    for (var i = arrayOfArguments.length - 1; i >= 0; i--) {
+        throwErrorIfArgumentDoesntHaveXY(arrayOfArguments[i], i);
+    };
 }
 
 function throwErrorIfArgumentDoesntHaveXY(axisPoint, point) {

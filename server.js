@@ -39,7 +39,7 @@ io.sockets.on('connection', function (socket) {
 		    	'parser/parser.js', 
 		    	__dirname +"/public/upload/"+ data,
 		    	'scara',
-		    	'processing'
+		    	'processingx'
 		    ]);
 
 		    ls.stdout.on('data', function (data) {

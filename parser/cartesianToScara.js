@@ -24,7 +24,6 @@ module.exports = function (xyPosition){
 			if (isNaN(xy[i].step0) || isNaN(xy[i].step1)) {
 
 				console.log("ERROR: DRAWING is out of reach of the robot arm");
-				// todo project
 				error = true;
 				break;
 			}

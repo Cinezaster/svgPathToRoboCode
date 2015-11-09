@@ -19,7 +19,7 @@ module.exports = function (resolution, pathArray){
 			yP = lP.points[1] + ((lP.points[3]-lP.points[1])*relPosOnLineInPerc);
 		} else if (lP.type === "C") {
 			relPosOnLine = cL*resolution - lP.startLength;
-			relPosOnLineInPerc = relPosOnLine / lP.bezier.length
+			relPosOnLineInPerc = relPosOnLine / lP.bezier.arcLength
 			xP = lP.bezier.mx(relPosOnLineInPerc);
 			yP = lP.bezier.my(relPosOnLineInPerc);
 		};
@@ -28,7 +28,7 @@ module.exports = function (resolution, pathArray){
 			x : xP,
 			y : yP,
 			paint : lP.paint
-		})  	
+		})  
 	};
 	return pointCloud;
 };

@@ -54,7 +54,7 @@ var fs = require('fs'),
 	svgObject = {g:{},data:{}},
 	guid,
 	totalLength = 0,
-	resolution = 6,
+	resolution = 8,
 	transform =  new Array(),
 	processing = "void setup() {\r\nsize(400, 400);\r\nnoLoop();\r\n}\r\n \r\n void position(x,y,l) {\r\n if(l == 0) {\r\nstroke(#FFCC00);\r\n} else {\r\nstroke(#00CCFF);\r\n}\r\n ellipse(x,y,1,1)}\r\n void draw() {\r\n background(255);\r\nnoFill()\;\r\n";
 
@@ -249,7 +249,6 @@ xml.on('end', function(){
 			allPaths[i].type = "L"
 		}
 	};
-	
 	// change all "M" and "S" to Curves
 	for (var i = 0; i < allPaths.length; i++) {
 		if (allPaths[i].type === "M") {
@@ -445,10 +444,7 @@ xml.on('end', function(){
 						});
 						i++
 				}
-				
 			};
-			
-			
 		}
 	};
 
@@ -458,7 +454,7 @@ xml.on('end', function(){
 		if (allPaths[i].type === "C") {
 			allPaths[i].bezier = new Bezier({x:p[0],y:p[1]},{x:p[2],y:p[3]},{x:p[4],y:p[5]},{x:p[6],y:p[7]});
 			allPaths[i].startLength = totalLength;
-			totalLength = totalLength + allPaths[i].bezier.length;
+			totalLength = totalLength + allPaths[i].bezier.arcLength;
 			allPaths[i].endLength = totalLength;
 		} else if (allPaths[i].type === "L") {
 			allPaths[i].length = Math.sqrt(Math.pow((p[0]-p[2]),2)+Math.pow((p[1]-p[3]),2));
@@ -512,8 +508,8 @@ xml.on('end', function(){
 			
 		};
 	};
-	
 	points.shift();
+
 	if (conversionType === "scara") {
 		var xyPoints = new CartesianToScara(points);
 		// PROCESSING OUTPUT show two arms based on there angle
@@ -589,7 +585,7 @@ xml.on('end', function(){
 
 
 
-	if (output === "processing") {
+	if (output === "processing" || output === "processingx") {
 		processing = processing +"}";
 
 		// PROCESSING OUTPUT finish the processing data and write to processing file and execupte that file.
