@@ -36,7 +36,7 @@ io.sockets.on('connection', function (socket) {
 	    	var stepData = '';
 	    	var spawn = require('child_process').spawn,
 		    ls = spawn('node', [
-		    	'parser/parser.js', 
+		    	'parser/gcode_parser.js', 
 		    	__dirname +"/public/upload/"+ data,
 		    	'scara',
 		    	'processingx'
