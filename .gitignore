@@ -3,4 +3,5 @@ public/bower_components
 parser/processing/
 parser/tmp/
 public/upload/
+public/gcode/
 public/processing/
