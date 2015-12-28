@@ -1,6 +1,8 @@
 svgPathToRoboCode
 =================
-first run `npm install`
+
+install prerequisites  `sudo apt-get install libbluetooth-dev`
+run `npm install`
 in /public run `bower install'
 
 
